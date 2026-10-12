@@ -583,10 +583,27 @@ const gsheet = {
     const curId = String((cur.values && cur.values[0] && cur.values[0][0]) || '') || 'ROW' + o.row;
     if (!o.row || curId !== o.id) throw new Error('Рядок змінився в таблиці. Оновіть застосунок і спробуйте ще раз');
   },
+  /* Пише рядки у перше вільне місце аркуша (не через :append — Google вважає порожні галочки даними
+     і дописує після 1000-го рядка). Повертає номер першого записаного рядка. */
   async append(sheetId, rows) {
-    const r = await gfetch(SHEETS + sheetId + '/values/' + encodeURIComponent(OPS_TAB + '!A:J') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS&includeValuesInResponse=false', { method: 'POST', body: JSON.stringify({ values: rows }) });
-    const m = String(r.updates && r.updates.updatedRange || '').match(/!A(\d+)/);
-    return m ? +m[1] : null;
+    const col = await gfetch(SHEETS + sheetId + '/values/' + encodeURIComponent(OPS_TAB + '!A2:B'));
+    const used = (col.values || []).map(r => !!(String(r[0] || '').trim() || String(r[1] || '').trim()));
+    const n = rows.length;
+    let start = -1;
+    for (let i = 0, run = 0; i < used.length; i++) {
+      run = used[i] ? 0 : run + 1;
+      if (run === n) { start = i - n + 1; break; }
+    }
+    if (start < 0) { let last = used.lastIndexOf(true); start = last + 1; }
+    const first = start + 2, lastRow = first + n - 1;
+    const meta = await gfetch(SHEETS + sheetId + '?fields=sheets.properties');
+    const tab = (meta.sheets || []).map(x => x.properties).find(p => p.title === OPS_TAB);
+    if (!tab) throw new Error('Не знайдено аркуш «' + OPS_TAB + '»');
+    const have = (tab.gridProperties && tab.gridProperties.rowCount) || 0;
+    if (have && lastRow > have) await gfetch(SHEETS + sheetId + ':batchUpdate', { method: 'POST', body: JSON.stringify({ requests: [
+      { appendDimension: { sheetId: tab.sheetId, dimension: 'ROWS', length: lastRow - have + 100 } }] }) });
+    await gfetch(SHEETS + sheetId + '/values/' + encodeURIComponent(OPS_TAB + '!A' + first + ':J' + lastRow) + '?valueInputOption=RAW', { method: 'PUT', body: JSON.stringify({ values: rows }) });
+    return first;
   },
 };
 const backend = {
