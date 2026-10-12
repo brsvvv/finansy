@@ -227,6 +227,18 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .dock .add:active { transform: scale(.92); }
 .add-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* редагування */
+.op[data-id] { cursor: pointer; border-radius: 12px; transition: background .15s; }
+@media (hover: hover) { .op[data-id]:hover { background: color-mix(in srgb, var(--surface-2) 60%, transparent); } }
+.op[data-id]:active { background: var(--surface-2); }
+.seg3 { grid-template-columns: 1fr 1fr 1fr; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row2 .field { min-width: 0; }
+.meta-line { color: var(--muted); font-size: 13px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.danger { border: 0; background: color-mix(in srgb, var(--c2) 14%, var(--surface-2)); color: var(--c2); border-radius: 16px; padding: 14px; font-weight: 700; font-size: 15px; transition: background .2s; }
+.danger.armed { background: var(--c2); color: var(--accent-ink); }
+.danger:disabled { opacity: .6; }
+
 /* шторка */
 .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 10; }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; display: grid; justify-items: center; }
@@ -608,7 +620,7 @@ function catRowHtml(name, val, max, i, extraHead = '', key) {
 function opHtml(o) {
   const c = catOf(o.cat);
   const sign = o.type === 'Доход' || o.type === 'Возврат' ? '+' : '';
-  return `<div class="op"><div class="tile" style="background:color-mix(in srgb, ${c.color} 22%, var(--surface-2))">${c.emoji}</div>
+  return `<div class="op" data-id="${esc(o.id)}" data-row="${o.row || ''}" role="button" tabindex="0" aria-label="Редагувати: ${esc(o.desc)}"><div class="tile" style="background:color-mix(in srgb, ${c.color} 22%, var(--surface-2))">${c.emoji}</div>
     <div class="txt"><div class="t1">${esc(o.desc)}</div><div class="t2"><span>${dShort.format(o.date)} · ${esc(o.type === 'Доход' ? (o.sub || 'Дохід') : c.uk)}</span>${o.check ? '<span class="flag">перевірити</span>' : ''}${o.type === 'Возврат' ? '<span class="flag">повернення</span>' : ''}</div></div>
     <div class="amt num ${sign ? 'in' : ''}">${sign}${money(o.amount)}</div></div>`;
 }
@@ -789,44 +801,90 @@ function openList(title, list) {
     <div class="meta num" style="color:var(--muted)">Разом · ${money(sum)}</div><div class="ops">${opsGrouped(list)}</div>`);
 }
 
-let form = { type: 'Расход', cat: null };
-function openAdd() {
-  form = { type: 'Расход', cat: null };
-  const today = ymd(new Date());
-  openSheet(`<h3><span>Нова операція</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
-    <div class="seg" role="group" aria-label="Тип"><button type="button" id="t-exp" aria-pressed="true">Витрата</button><button type="button" id="t-inc" aria-pressed="false">Дохід</button></div>
-    <label class="field"><span>Сума, zł</span><input id="f-amount" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
+/* ===== Додавання і редагування операції ===== */
+let form = {};
+const TYPE_UK = { 'Расход': 'Витрата', 'Доход': 'Дохід', 'Возврат': 'Повернення' };
+function openAdd() { openEditor(null); }
+function openEditor(op) {
+  const edit = !!op;
+  form = { type: edit ? op.type : 'Расход', cat: edit ? op.cat : null, armed: false };
+  const amountText = edit ? nf.format(op.amount).replace(/\s/g, '') : '';
+  openSheet(`<h3><span>${edit ? 'Редагування' : 'Нова операція'}</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
+    <div class="seg seg3" role="group" aria-label="Тип">${Object.entries(TYPE_UK).map(([k, t]) => `<button type="button" data-t="${k}" aria-pressed="${form.type === k}">${t}</button>`).join('')}</div>
+    <label class="field"><span>Сума, zł</span><input id="f-amount" inputmode="decimal" placeholder="0,00" autocomplete="off" value="${esc(amountText)}"></label>
+    <label class="field"><span>Назва</span><input id="f-desc" placeholder="Наприклад, Biedronka" autocomplete="off" value="${edit ? esc(op.desc) : ''}"></label>
     <div class="field" id="cat-field"><span>Категорія</span><div class="cats" id="f-cats"></div></div>
-    <label class="field"><span>Опис</span><input id="f-desc" placeholder="Наприклад, Biedronka" autocomplete="off"></label>
-    <label class="field"><span>Дата</span><input id="f-date" type="date" value="${today}"></label>
+    <div class="row2">
+      <label class="field"><span>Дата</span><input id="f-date" type="date" value="${ymd(edit ? op.date : new Date())}"></label>
+      <label class="field"><span>Підкатегорія</span><input id="f-sub" placeholder="Необов'язково" autocomplete="off" value="${edit ? esc(op.sub || '') : ''}"></label>
+    </div>
+    ${edit ? `<div class="meta-line"><span>Джерело: ${esc(op.source || '—')}</span>${op.check ? '<span class="flag">на перевірці</span>' : ''}</div>` : ''}
     <div class="err" id="f-err" hidden></div>
-    <button class="save" type="button" id="f-save">Зберегти</button>`);
+    <button class="save" type="button" id="f-save">${edit ? 'Зберегти зміни' : 'Зберегти'}</button>
+    ${edit ? '<button class="danger" type="button" id="f-del">Видалити операцію</button>' : ''}`);
   const drawCats = () => {
-    $('f-cats').innerHTML = Object.entries(CATS).filter(([k]) => k !== 'Доходы').map(([k, c]) => `<button type="button" data-k="${k}" aria-pressed="${form.cat === k}"><span>${c.emoji}</span>${c.uk}</button>`).join('');
+    const list = form.type === 'Доход' ? [['Доходы', CATS['Доходы']]] : Object.entries(CATS).filter(([k]) => k !== 'Доходы');
+    if (form.type === 'Доход') form.cat = 'Доходы'; else if (form.cat === 'Доходы') form.cat = null;
+    $('f-cats').innerHTML = list.map(([k, c]) => `<button type="button" data-k="${k}" aria-pressed="${form.cat === k}"><span>${c.emoji}</span>${c.uk}</button>`).join('');
     $('f-cats').querySelectorAll('button').forEach(b => b.onclick = () => { form.cat = b.dataset.k; drawCats(); });
   };
   drawCats();
-  const setType = t => { form.type = t; $('t-exp').setAttribute('aria-pressed', t === 'Расход'); $('t-inc').setAttribute('aria-pressed', t === 'Доход'); $('cat-field').hidden = t === 'Доход'; };
-  $('t-exp').onclick = () => setType('Расход'); $('t-inc').onclick = () => setType('Доход');
-  $('f-amount').focus();
+  $('sheet-in').querySelectorAll('.seg3 button').forEach(b => b.onclick = () => {
+    form.type = b.dataset.t;
+    $('sheet-in').querySelectorAll('.seg3 button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    drawCats();
+  });
+  if (!edit) $('f-amount').focus();
+  const err = $('f-err');
+  const fail = m => { err.textContent = m; err.hidden = false; };
+  const busy = (btn, on, text) => { btn.disabled = on; btn.textContent = text; };
   $('f-save').onclick = async () => {
     const amount = parseFloat($('f-amount').value.replace(/\s/g, '').replace(',', '.'));
-    const err = $('f-err');
-    if (!(amount > 0)) { err.textContent = 'Введіть суму більшу за нуль, наприклад 24,90.'; err.hidden = false; return; }
-    if (form.type === 'Расход' && !form.cat) { err.textContent = 'Оберіть категорію.'; err.hidden = false; return; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test($('f-date').value)) { err.textContent = 'Оберіть дату.'; err.hidden = false; return; }
-    if (!api.ready()) { err.textContent = 'Спершу підключіть таблицю (⚙ угорі).'; err.hidden = false; return; }
-    const cat = form.type === 'Доход' ? 'Доходы' : form.cat;
-    const op = { date: $('f-date').value, type: form.type, cat, sub: form.type === 'Доход' ? 'Інше' : '', desc: $('f-desc').value.trim() || catOf(cat).uk, amount: Math.round(amount * 100) / 100 };
-    const btn = $('f-save'); btn.disabled = true; btn.textContent = 'Зберігаю…'; err.hidden = true;
+    if (!(amount > 0)) return fail('Введіть суму більшу за нуль, наприклад 24,90.');
+    if (!form.cat) return fail('Оберіть категорію.');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test($('f-date').value)) return fail('Оберіть дату.');
+    if (!api.ready()) return fail('Спершу підключіть таблицю (⚙ угорі).');
+    const data = { date: $('f-date').value, type: form.type, cat: form.cat, sub: $('f-sub').value.trim(),
+      desc: $('f-desc').value.trim() || catOf(form.cat).uk, amount: Math.round(amount * 100) / 100 };
+    const btn = $('f-save'); busy(btn, true, 'Зберігаю…'); err.hidden = true;
     try {
-      const r = await api.call('add', { op });
-      S.ops.unshift(toOp(r.op)); S.ops.sort((a, b) => b.date - a.date); cacheOps();
-      closeSheet(); render(); renderReports();
-      toast('Записано в таблицю');
-    } catch (e) { err.textContent = e.message; err.hidden = false; btn.disabled = false; btn.textContent = 'Зберегти'; }
+      if (edit) {
+        const r = await api.call('update', { id: op.id, row: op.row, ...data });
+        if (!(r.v >= 2)) throw new Error('Скрипт таблиці ще стара версія: змінилися лише тип і категорія. Оновіть функцію update_ у «Фінанси API»');
+        Object.assign(op, toOp(data), { check: false });
+      } else {
+        const r = await api.call('add', { op: data });
+        S.ops.unshift(toOp(r.op));
+      }
+      S.ops.sort((a, b) => b.date - a.date); cacheOps();
+      closeSheet(); render(); renderReports(); if (S.view === 'search') renderSearch();
+      toast(edit ? 'Зміни збережено в таблиці' : 'Записано в таблицю');
+    } catch (e) { fail(e.message); busy(btn, false, edit ? 'Зберегти зміни' : 'Зберегти'); }
+  };
+  if (edit) $('f-del').onclick = async () => {
+    const btn = $('f-del');
+    if (!form.armed) { form.armed = true; btn.textContent = 'Натисніть ще раз, щоб видалити'; btn.classList.add('armed'); return; }
+    if (!api.ready()) return fail('Спершу підключіть таблицю (⚙ угорі).');
+    busy(btn, true, 'Видаляю…'); err.hidden = true;
+    try {
+      const r = await api.call('update', { id: op.id, row: op.row, remove: true });
+      if (!r.removed) throw new Error('Скрипт таблиці ще стара версія і не вміє видаляти. Оновіть функцію update_ у «Фінанси API»');
+      S.ops = await loadOperations(); cacheOps();   // номери рядків після видалення зсуваються
+      closeSheet(); render(); renderReports(); if (S.view === 'search') renderSearch();
+      toast('Операцію видалено з таблиці');
+    } catch (e) { fail(e.message); busy(btn, false, 'Видалити операцію'); btn.classList.remove('armed'); form.armed = false; }
   };
 }
+// Будь-яка операція у списках відкривається для редагування
+document.addEventListener('click', e => {
+  const el = e.target.closest('.op[data-id]');
+  if (!el || el.closest('.rv-item')) return;
+  const op = S.ops.find(x => String(x.id) === el.dataset.id && String(x.row || '') === el.dataset.row) || S.ops.find(x => String(x.id) === el.dataset.id);
+  if (op) openEditor(op);
+});
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.op[data-id]')) { e.preventDefault(); e.target.click(); }
+});
 function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3200); }
 
 /* ===== Події ===== */
