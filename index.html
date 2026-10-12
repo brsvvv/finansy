@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0f0e0c" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f3f0e8" media="(prefers-color-scheme: light)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,6 +12,7 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <style>
 :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html { touch-action: pan-x pan-y; -webkit-tap-highlight-color: transparent; }
 body { margin: 0; -webkit-text-size-adjust: 100%; }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
@@ -60,6 +61,11 @@ img { max-width: 100%; }
 html, body { background: var(--bg); }
 body { color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.4; padding-inline: 16px; padding-block: 0; }
 button { font: inherit; color: inherit; cursor: pointer; }
+input, select, textarea { font-size: 16px !important; }
+button, .nav, .drawer, .card-head, .chips-sel, .periods { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#app { touch-action: pan-y; }
+.periods, .chips-sel, .imp-list { touch-action: pan-x pan-y; }
+.view-slide { will-change: transform, opacity; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .num { font-variant-numeric: tabular-nums; }
 .app { max-width: 520px; margin: 0 auto; padding-block: 12px 150px; display: grid; gap: 14px; }
@@ -1253,7 +1259,10 @@ function toggleCats() {
 function pop(el) { if (reduceMotion() || !el) return; el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in'); }
 $('q').oninput = renderSearch;
 const VIEWS = { home: 'Фінанси', reports: 'Звіти', search: 'Пошук', import: 'Дані' };
-function go(view) {
+const VIEW_ORDER = ['home', 'reports', 'search', 'import'];
+function go(view, dir) {
+  const prev = S.view;
+  if (dir === undefined && prev !== view) dir = VIEW_ORDER.indexOf(view) > VIEW_ORDER.indexOf(prev) ? 1 : -1;
   S.view = view;
   document.querySelectorAll('.nav button, .drawer-nav button').forEach(x => x.dataset.view === view ? x.setAttribute('aria-current', 'page') : x.removeAttribute('aria-current'));
   Object.keys(VIEWS).forEach(v => $('view-' + v).hidden = v !== view);
@@ -1261,7 +1270,7 @@ function go(view) {
   if (view === 'reports') { renderReports(); bindCatRows(); }
   if (view === 'search') { renderSearch(); $('q').focus(); }
   if (view === 'import') renderExport();
-  pop($('view-' + view));
+  slideIn($('view-' + view), prev === view ? 0 : dir);
   closeDrawer(); $('dock').classList.remove('tucked');
   window.scrollTo({ top: 0 });
 }
@@ -1269,6 +1278,65 @@ document.querySelectorAll('.nav button, .drawer-nav button').forEach(b => b.oncl
   if (b.dataset.act === 'prefs') { closeDrawer(); openPrefs(); } else go(b.dataset.view);
 });
 $('top-add').onclick = openAdd;
+
+/* --- перехід між розділами свайпом вліво/вправо --- */
+function slideIn(el, dir) {
+  if (!el) return;
+  if (!dir || reduceMotion()) return pop(el);
+  el.animate([{ transform: `translateX(${dir * 28}%)`, opacity: 0 }, { transform: 'none', opacity: 1 }],
+    { duration: 300, easing: 'cubic-bezier(.2,.8,.2,1)' });
+}
+(() => {
+  const app = $('app');
+  let x0 = 0, y0 = 0, t0 = 0, dx = 0, mode = null, view = null;
+  const blocked = t => t.closest('input, select, textarea, .periods, .chips-sel, .imp-list, #donut, .sheet, .drawer, [data-noswipe]');
+  const busy = () => !$('sheet').hidden || $('drawer').classList.contains('open');
+  const neighbour = d => VIEW_ORDER[VIEW_ORDER.indexOf(S.view) + d];
+  app.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || busy() || blocked(e.target)) { mode = 'off'; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); dx = 0; mode = null;
+    view = $('view-' + S.view);
+  }, { passive: true });
+  app.addEventListener('touchmove', e => {
+    if (mode === 'off' || !view) return;
+    const x = e.touches[0].clientX - x0, y = e.touches[0].clientY - y0;
+    if (!mode) {
+      if (Math.abs(x) < 10 && Math.abs(y) < 10) return;
+      mode = Math.abs(x) > Math.abs(y) * 1.3 ? 'h' : 'off';
+      if (mode !== 'h') return;
+      view.classList.add('view-slide');
+    }
+    e.preventDefault();
+    dx = x;
+    // на краях (Головна вправо / Дані вліво) тягнеться з опором
+    const edge = (dx > 0 && !neighbour(-1)) || (dx < 0 && !neighbour(1));
+    const shift = edge ? dx * 0.25 : dx;
+    view.style.transform = `translateX(${shift}px)`;
+    view.style.opacity = String(1 - Math.min(Math.abs(shift) / window.innerWidth, 1) * 0.5);
+  }, { passive: false });
+  const end = () => {
+    if (mode !== 'h' || !view) { mode = null; return; }
+    const v = view; view = null; mode = null;
+    const speed = Math.abs(dx) / Math.max(Date.now() - t0, 1);
+    const d = dx < 0 ? 1 : -1;
+    const target = neighbour(d);
+    const reset = () => { v.style.transform = ''; v.style.opacity = ''; v.classList.remove('view-slide'); };
+    if ((Math.abs(dx) > window.innerWidth * 0.22 || speed > 0.5) && (target || d === -1)) {
+      if (!target) { reset(); return openDrawer(); }           // свайп вправо на Головній відкриває меню
+      if (reduceMotion()) { reset(); return go(target, d); }
+      v.animate([{ transform: v.style.transform, opacity: v.style.opacity }, { transform: `translateX(${-d * 40}%)`, opacity: 0 }],
+        { duration: 160, easing: 'ease-in' }).onfinish = () => { reset(); go(target, d); };
+    } else {
+      v.animate([{ transform: v.style.transform, opacity: v.style.opacity }, { transform: 'none', opacity: 1 }],
+        { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' }).onfinish = reset;
+    }
+  };
+  app.addEventListener('touchend', end, { passive: true });
+  app.addEventListener('touchcancel', end, { passive: true });
+  // заборона масштабування жестами (Safari на iPhone)
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive: false }));
+  document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+})();
 
 /* --- висувне меню зліва --- */
 function openDrawer() {
