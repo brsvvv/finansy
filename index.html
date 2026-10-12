@@ -566,7 +566,7 @@ const gsheet = {
       { setDataValidation: { range: { sheetId: sid, startRowIndex: 1, startColumnIndex: 8, endColumnIndex: 9 }, rule: { condition: { type: 'BOOLEAN' } } } },
       { setDataValidation: { range: { sheetId: sid, startRowIndex: 1, startColumnIndex: 2, endColumnIndex: 3 }, rule: { condition: { type: 'ONE_OF_LIST', values: Object.values(TYPE_UK).map(v => ({ userEnteredValue: v })) }, showCustomUi: true, strict: false } } },
       { setDataValidation: { range: { sheetId: sid, startRowIndex: 1, startColumnIndex: 3, endColumnIndex: 4 }, rule: { condition: { type: 'ONE_OF_LIST', values: Object.values(CATS).map(c => ({ userEnteredValue: c.uk })) }, showCustomUi: true, strict: false } } },
-      { autoResizeDimensions: { dimensions: { sheetId: sid, dimension: 'COLUMNS', startIndex: 0, endIndex: HEAD.length } } },
+      ...[190, 95, 100, 180, 130, 220, 105, 110, 90, 160].map((px, i) => ({ updateDimensionProperties: { range: { sheetId: sid, dimension: 'COLUMNS', startIndex: i, endIndex: i + 1 }, properties: { pixelSize: px }, fields: 'pixelSize' } })),
     ] }) });
     store.set('g.sheet', f.id);
     return f.id;
