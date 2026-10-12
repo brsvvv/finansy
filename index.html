@@ -40,7 +40,7 @@ img { max-width: 100%; }
   --font-display: "Nunito", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   --font-body: "Nunito", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
   --c1:#e7b54a; --c2:#e7704a; --c3:#4aa8e7; --c4:#3fbf9a; --c5:#9a7ee8; --c6:#e75a8c;
-  --c7:#7fc24a; --c8:#d98be0; --c9:#5ad1d6; --c10:#e8d14a; --c11:#f08a5d; --c12:#8f8a7e;
+  --c7:#7fc24a; --c8:#d98be0; --c9:#5ad1d6; --c10:#e8d14a; --c11:#f08a5d; --c12:#8f8a7e; --c13:#5fd4a8;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -453,6 +453,7 @@ const CATS = {
   'Электроника':          { uk: 'Електроніка', emoji: '💻', color: 'var(--c9)' },
   'Подарки':              { uk: 'Подарунки', emoji: '🎁', color: 'var(--c1)' },
   'Развлечения':          { uk: 'Розваги', emoji: '🎉', color: 'var(--c2)' },
+  'Сбережения':           { uk: 'Заощадження', emoji: '💰', color: 'var(--c13)' },
   'Прочее':               { uk: 'Інше', emoji: '📦', color: 'var(--c12)' },
   'Доходы':               { uk: 'Доходи', emoji: '💼', color: 'var(--good)' },
 };
@@ -576,16 +577,22 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const $ = id => document.getElementById(id);
 const plural = (n, one, few, many) => { const a = n % 10, b = n % 100; return n + ' ' + (a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many); };
 
+// «Заощадження» — не витрата: рахуємо окремо як «Відклав»
+const SAVINGS = 'Сбережения';
 function totals(list) {
-  let inc = 0, exp = 0;
-  list.forEach(o => { if (o.type === 'Доход') inc += o.amount; else if (o.type === 'Возврат') exp -= o.amount; else exp += o.amount; });
-  return { inc, exp };
+  let inc = 0, exp = 0, sav = 0;
+  list.forEach(o => {
+    const v = o.type === 'Возврат' ? -o.amount : o.amount;
+    if (o.type === 'Доход') inc += o.amount; else if (o.cat === SAVINGS) sav += v; else exp += v;
+  });
+  return { inc, exp, sav };
 }
 function byCat(list, type) {
   const map = {};
   list.forEach(o => {
     const isInc = o.type === 'Доход';
     if (type === 'inc' ? !isInc : isInc) return;
+    if (type !== 'inc' && o.cat === SAVINGS) return;
     const key = type === 'inc' ? (o.sub || 'Інше') : o.cat;
     map[key] = (map[key] || 0) + (o.type === 'Возврат' ? -o.amount : o.amount);
   });
@@ -597,14 +604,14 @@ function renderPeriods() {
   $('periods').innerHTML = PERIODS.map(([k, t]) => `<button type="button" data-p="${k}" aria-pressed="${S.period === k}">${t}</button>`).join('');
 }
 function renderSummary(list) {
-  const { inc, exp } = totals(list);
-  const left = inc - exp;
-  const rate = inc > 0 ? Math.max(0, Math.round(left / inc * 100)) : null;
+  const { inc, exp, sav } = totals(list);
+  const left = inc - exp - sav;
+  const rate = inc > 0 ? Math.max(0, Math.round((inc - exp) / inc * 100)) : null;
   const toCheck = S.ops.filter(o => o.check).length;
   $('summary').innerHTML = `
     <div class="label">${inc > 0 ? 'Залишилось з доходу' : 'Витрачено'}</div>
     <div class="big num ${left < 0 && inc > 0 ? 'neg' : ''}">${money(inc > 0 ? left : exp)}</div>
-    <div class="meta num"><span>Заробив ${money(inc)} · Витратив ${money(exp)}</span></div>
+    <div class="meta num"><span>Заробив ${money(inc)} · Витратив ${money(exp)}${sav > 0 ? ' · Відклав ' + money(sav) : ''}</span></div>
     ${rate !== null ? `<div class="rate"><div class="meta">Норма заощаджень ${rate}%</div><div class="rate-bar"><span style="width:${Math.min(rate, 100)}%"></span></div></div>` : ''}
     ${toCheck ? `<button class="review" type="button" id="review-btn"><span>⚠ ${plural(toCheck, 'операція', 'операції', 'операцій')} на перевірку</span><span class="chev">›</span></button>` : ''}`;
   const rb = $('review-btn');
@@ -1036,6 +1043,13 @@ const DICT = [
   ['shein', 'Shein', 'Одежда', '', true],
   ['vinted', 'Vinted', 'Прочее', '', true],
   ['olx', 'OLX', 'Прочее', '', true],
+  ['xtb', 'XTB', 'Сбережения', 'Інвестиції', false],
+  ['etoro', 'eToro', 'Сбережения', 'Інвестиції', false],
+  ['trading 212', 'Trading 212', 'Сбережения', 'Інвестиції', false],
+  ['trading212', 'Trading 212', 'Сбережения', 'Інвестиції', false],
+  ['obligacje', 'Облігації', 'Сбережения', 'Інвестиції', false],
+  ['lokata', 'Депозит', 'Сбережения', 'Депозит', false],
+  ['oszczednosci', 'Заощадження', 'Сбережения', '', false],
 ];
 const normTxt = s => String(s || '').toLowerCase().replace(/ł/g, 'l').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
 function matchMerchant(text) {
