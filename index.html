@@ -225,7 +225,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   #an-mode .card { grid-template-columns: 280px minmax(0, 1fr); column-gap: 28px; align-items: center; }
   #an-mode .legend { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
   .sheet { top: 0; align-items: center; }
-  .sheet-in { border-radius: 26px; width: min(600px, calc(100% - 48px)); }
+  .sheet-in { border-radius: 26px; width: min(600px, calc(100% - 48px)); height: auto; max-height: 86vh; }
 }
 
 /* телефон і планшет: кругла кнопка «+» праворуч над навігацією */
@@ -286,8 +286,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 /* шторка */
 .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 10; }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; display: grid; justify-items: center; }
-.sheet-in { width: min(100%, 560px); max-height: 88vh; overflow-y: auto; background: var(--surface); border-radius: 26px 26px 0 0; padding: 10px 18px calc(22px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; }
-.grab { width: 40px; height: 5px; border-radius: 5px; background: var(--line); justify-self: center; }
+.sheet-in { width: min(100%, 560px); height: calc(100dvh - env(safe-area-inset-top, 0px) - 10px); max-height: none; overflow-y: auto; overscroll-behavior: contain; background: var(--surface); border-radius: 26px 26px 0 0; padding: 10px 18px calc(22px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; align-content: start; touch-action: pan-y; }
+.sheet-in .x, #drawer-x { display: none !important; }
+.grab { width: 40px; height: 5px; border-radius: 5px; background: var(--line); justify-self: center; margin: 2px 0 4px; box-shadow: 0 0 0 14px transparent; }
 .sheet h3 { margin: 0; font-size: 19px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .x { border: 0; background: var(--surface-2); width: 34px; height: 34px; border-radius: 50%; }
 .field { display: grid; gap: 6px; }
@@ -371,7 +372,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   #view-search { max-width: 780px; }
 
   .sheet { top: 0; align-items: center; }
-  .sheet-in { width: min(560px, calc(100% - 48px)); border-radius: 26px; max-height: 86vh; padding: 22px 26px 26px; }
+  .sheet-in { width: min(560px, calc(100% - 48px)); border-radius: 26px; height: auto; max-height: 86vh; padding: 22px 26px 26px; }
   .grab { display: none; }
   .toast { bottom: 32px; }
   .imp-row { grid-template-columns: 24px minmax(0, 1fr) 230px 120px; }
@@ -379,12 +380,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .sheet-in { animation: up .22s ease-out; }
+  .sheet-in { animation: up .32s cubic-bezier(.2,.8,.2,1); }
   .bar span, .stack span, .rate-bar span { animation: grow .6s cubic-bezier(.2,.8,.2,1) both; transform-origin: left center; }
   @keyframes grow { from { transform: scaleX(0); } }
   .fade-in { animation: fadein .28s ease-out both; }
   @keyframes fadein { from { opacity: 0; transform: translateY(6px); } }
-  @keyframes up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+  @keyframes up { from { transform: translateY(100%); } to { transform: none; } }
 }
 </style>
 </head>
@@ -1140,8 +1141,64 @@ function bindCatRows() {
 }
 
 /* ===== Шторки ===== */
-function openSheet(html) { $('sheet-in').innerHTML = '<div class="grab"></div>' + html; $('scrim').hidden = false; $('sheet').hidden = false; const x = $('sheet-in').querySelector('.x'); if (x) x.onclick = closeSheet; }
-function closeSheet() { $('scrim').hidden = true; $('sheet').hidden = true; }
+let sheetHideT = 0;
+function openSheet(html) {
+  clearTimeout(sheetHideT);
+  const si = $('sheet-in'), was = !$('sheet').hidden;
+  si.getAnimations().forEach(a => a.cancel()); $('scrim').getAnimations().forEach(a => a.cancel());
+  si.style.transform = ''; $('scrim').style.opacity = '';
+  si.innerHTML = '<div class="grab"></div>' + html;
+  si.querySelectorAll('.x').forEach(b => b.remove());           // закривається свайпом вниз або тапом поза вікном
+  si.scrollTop = 0;
+  if (was) si.style.animation = 'none'; else si.style.animation = '';
+  $('scrim').hidden = false; $('sheet').hidden = false;
+}
+function hideSheet() {
+  $('scrim').hidden = true; $('sheet').hidden = true;
+  $('sheet-in').getAnimations().forEach(a => a.cancel()); $('scrim').getAnimations().forEach(a => a.cancel());
+  $('sheet-in').style.transform = ''; $('scrim').style.opacity = '';
+}
+function closeSheet() {
+  if ($('sheet').hidden) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return hideSheet();
+  const si = $('sheet-in'), from = si.style.transform || 'none';
+  si.animate([{ transform: from }, { transform: 'translateY(105%)' }], { duration: 260, easing: 'cubic-bezier(.4,0,.9,.6)', fill: 'forwards' });
+  $('scrim').animate([{ opacity: getComputedStyle($('scrim')).opacity }, { opacity: 0 }], { duration: 260, fill: 'forwards' });
+  sheetHideT = setTimeout(hideSheet, 250);
+}
+// свайп вниз закриває вікно
+(() => {
+  const si = $('sheet-in');
+  let y0 = 0, t0 = 0, dy = 0, drag = false, can = false;
+  si.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) { can = false; return; }
+    y0 = e.touches[0].clientY; t0 = Date.now(); dy = 0; drag = false;
+    can = si.scrollTop <= 0 || !!e.target.closest('.grab, h3');
+  }, { passive: true });
+  si.addEventListener('touchmove', e => {
+    if (!can) return;
+    const d = e.touches[0].clientY - y0;
+    if (!drag) {
+      if (d < -6) { can = false; return; }
+      if (d < 8) return;
+      drag = true; document.activeElement && document.activeElement.blur && document.activeElement.blur();
+    }
+    e.preventDefault();
+    dy = Math.max(0, d);
+    si.style.transform = `translateY(${dy}px)`;
+    $('scrim').style.opacity = String(1 - Math.min(dy / 500, .8));
+  }, { passive: false });
+  const end = () => {
+    if (!drag) return;
+    drag = false;
+    const v = dy / Math.max(Date.now() - t0, 1);
+    if (dy > 110 || v > 0.6) return closeSheet();
+    si.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    si.style.transform = ''; $('scrim').style.opacity = '';
+  };
+  si.addEventListener('touchend', end, { passive: true });
+  si.addEventListener('touchcancel', end, { passive: true });
+})();
 $('scrim').onclick = closeSheet;
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
 function openList(title, list) {
