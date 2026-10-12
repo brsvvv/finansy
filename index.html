@@ -40,7 +40,7 @@ img { max-width: 100%; }
   --font-display: "Nunito", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   --font-body: "Nunito", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
   --c1:#e7b54a; --c2:#e7704a; --c3:#4aa8e7; --c4:#3fbf9a; --c5:#9a7ee8; --c6:#e75a8c;
-  --c7:#7fc24a; --c8:#d98be0; --c9:#5ad1d6; --c10:#e8d14a; --c11:#f08a5d; --c12:#8f8a7e; --c13:#5fd4a8;
+  --c7:#7fc24a; --c8:#d98be0; --c9:#5ad1d6; --c10:#e8d14a; --c11:#f08a5d; --c12:#8f8a7e; --c13:#5fd4a8; --c14:#e0864a;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -453,6 +453,7 @@ const CATS = {
   'Электроника':          { uk: 'Електроніка', emoji: '💻', color: 'var(--c9)' },
   'Подарки':              { uk: 'Подарунки', emoji: '🎁', color: 'var(--c1)' },
   'Развлечения':          { uk: 'Розваги', emoji: '🎉', color: 'var(--c2)' },
+  'Кредиты':              { uk: 'Кредити', emoji: '💳', color: 'var(--c14)' },
   'Сбережения':           { uk: 'Заощадження', emoji: '💰', color: 'var(--c13)' },
   'Прочее':               { uk: 'Інше', emoji: '📦', color: 'var(--c12)' },
   'Доходы':               { uk: 'Доходи', emoji: '💼', color: 'var(--good)' },
@@ -1043,6 +1044,13 @@ const DICT = [
   ['shein', 'Shein', 'Одежда', '', true],
   ['vinted', 'Vinted', 'Прочее', '', true],
   ['olx', 'OLX', 'Прочее', '', true],
+  ['kredyt', 'Кредит', 'Кредиты', '', false],
+  ['kredytu', 'Платіж по кредиту', 'Кредиты', '', false],
+  ['kredytowej', 'Кредитна картка', 'Кредиты', 'Кредитна картка', false],
+  ['pozyczka', 'Позика', 'Кредиты', '', false],
+  ['pozyczki', 'Позика', 'Кредиты', '', false],
+  ['rata', 'Розстрочка', 'Кредиты', 'Розстрочка', true],
+  ['raty', 'Розстрочка', 'Кредиты', 'Розстрочка', true],
   ['xtb', 'XTB', 'Сбережения', 'Інвестиції', false],
   ['etoro', 'eToro', 'Сбережения', 'Інвестиції', false],
   ['trading 212', 'Trading 212', 'Сбережения', 'Інвестиції', false],
