@@ -255,6 +255,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .cats button span { font-size: 22px; }
 .cats button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .save { border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 16px; padding: 15px; font-weight: 700; font-size: 16px; }
+.hint a { color: var(--accent); }
+.g-btn { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.g-btn svg { background: #fff; border-radius: 50%; padding: 3px; box-sizing: content-box; }
 .save:disabled { opacity: .45; cursor: not-allowed; }
 .err { color: var(--c2); font-size: 13px; }
 
@@ -460,16 +463,218 @@ const CATS = {
 };
 const catOf = c => CATS[c] || CATS['Прочее'];
 
-/* ===== Дані: Google Таблиця «Учёт расходов vol.1», аркуш «Операции» =====
-   Адреса скрипту і ключ зберігаються лише на цьому пристрої (налаштування ⚙). */
+/* ===== Дані =====
+   Режим «google» (для всіх): вхід через Google, застосунок створює таблицю «Фінанси» у Google Drive користувача
+   і працює лише з нею (дозвіл drive.file — інших файлів не бачить).
+   Режим «script» (розширено): своя таблиця через Apps Script (адреса + ключ). */
+const GOOGLE_CLIENT_ID = ''; // вставляється після налаштування Google Cloud
+const SHEET_TITLE = 'Фінанси';
+const OPS_TAB = 'Операції';
+const HEAD = ['ID', 'Дата', 'Тип', 'Категорія', 'Підкатегорія', 'Опис', 'Сума', 'Джерело', 'Перевірити', 'Примітка'];
 let TODAY = new Date();
 const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const fromYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const toOp = o => ({ ...o, date: fromYmd(o.date) });
+const rid = () => Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
+async function sha(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return Array.from(new Uint8Array(b).slice(0, 8), x => x.toString(16).padStart(2, '0')).join(''); }
 
+/* Назви в таблиці користувача — українською; всередині застосунку — ключі CATS */
+const typeFrom = v => { v = String(v || '').trim(); for (const [k, u] of Object.entries(TYPE_UK)) if (v === k || v === u) return k; return 'Расход'; };
+const catFrom = v => { v = String(v || '').trim().replace(/^\p{Extended_Pictographic}️?\s*/u, ''); if (CATS[v]) return v; for (const [k, c] of Object.entries(CATS)) if (c.uk.toLowerCase() === v.toLowerCase()) return k; return 'Прочее'; };
+const serialToYmd = n => { const d = new Date(Math.round((n - 25569) * 864e5)); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0'); };
+const ymdToSerial = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d) / 864e5 + 25569; };
+function cellDate(v) {
+  if (typeof v === 'number' && v > 20000) return serialToYmd(v);
+  const s = String(v || '').trim(); let m = s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/);
+  if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[0] : null;
+}
+function cellAmount(v) {
+  if (typeof v === 'number') return v ? Math.abs(v) : null;
+  const n = toAmount(v); return n ? Math.abs(n) : null;
+}
+
+/* --- Вхід через Google (OAuth 2.0 для браузера, через перенаправлення — працює і з початкового екрана iPhone) --- */
+const auth = {
+  token() { const t = store.get('g.token', ''), exp = +store.get('g.exp', 0); return t && exp - Date.now() > 60e3 ? t : ''; },
+  email() { return store.get('g.email', ''); },
+  redirectUri() { return new URL('./', location.href).href; },
+  go(silent) {
+    const state = rid(); store.set('g.state', state); store.set('g.tried', String(Date.now()));
+    const p = new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID, redirect_uri: this.redirectUri(), response_type: 'token', state,
+      scope: 'https://www.googleapis.com/auth/drive.file openid email', include_granted_scopes: 'true',
+    });
+    if (silent) { p.set('prompt', 'none'); if (this.email()) p.set('login_hint', this.email()); }
+    else p.set('prompt', 'select_account');
+    location.assign('https://accounts.google.com/o/oauth2/v2/auth?' + p);
+  },
+  /* Розбирає відповідь Google у #… після повернення. 'ok' | 'need-login' | 'denied' | null */
+  takeRedirect() {
+    if (!/[#&](access_token|error)=/.test(location.hash)) return null;
+    const p = new URLSearchParams(location.hash.slice(1));
+    history.replaceState(null, '', location.pathname + location.search);
+    if (p.get('state') !== store.get('g.state', '-')) return 'denied';
+    store.del('g.state');
+    if (p.get('access_token')) {
+      if (!/drive\.file/.test(p.get('scope') || '')) return 'no-scope';
+      store.set('g.token', p.get('access_token')); store.set('g.exp', String(Date.now() + (+p.get('expires_in') || 3600) * 1e3));
+      return 'ok';
+    }
+    return /interaction_required|login_required|consent_required|account_selection_required/.test(p.get('error')) ? 'need-login' : 'denied';
+  },
+  signOut() {
+    const t = store.get('g.token', '');
+    if (t) fetch('https://oauth2.googleapis.com/revoke?token=' + encodeURIComponent(t), { method: 'POST' }).catch(() => {});
+    ['g.token', 'g.exp', 'g.email', 'g.sheet', 'ops', 'backend'].forEach(k => store.del(k));
+  },
+};
+class AuthExpired extends Error {}
+async function gfetch(url, opt = {}) {
+  const t = auth.token(); if (!t) throw new AuthExpired('Потрібно увійти знову');
+  let res;
+  try { res = await fetch(url, { ...opt, headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json', ...(opt.headers || {}) } }); }
+  catch (e) { throw new Error('Немає зв\'язку з Google. Перевірте інтернет'); }
+  if (res.status === 401) { store.del('g.token'); throw new AuthExpired('Потрібно увійти знову'); }
+  const data = res.status === 204 ? {} : await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 404) throw Object.assign(new Error('Таблицю не знайдено'), { notFound: true });
+    if (res.status === 403) throw new Error('Google не дав доступу до таблиці (' + ((data.error && data.error.message) || 'заборонено') + ')');
+    throw new Error('Помилка Google: ' + ((data.error && data.error.message) || res.status));
+  }
+  return data;
+}
+const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets/';
+const gsheet = {
+  id() { return store.get('g.sheet', ''); },
+  async me() { const u = await gfetch('https://openidconnect.googleapis.com/v1/userinfo'); if (u.email) store.set('g.email', u.email); return u; },
+  /* Знаходить таблицю застосунку в Drive або створює нову */
+  async ensure() {
+    if (this.id()) return this.id();
+    const q = encodeURIComponent("appProperties has { key='finansyApp' and value='1' } and trashed = false");
+    const found = await gfetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=createdTime&fields=files(id,name)&pageSize=5`);
+    if (found.files && found.files.length) { store.set('g.sheet', found.files[0].id); return found.files[0].id; }
+    const f = await gfetch('https://www.googleapis.com/drive/v3/files?fields=id', { method: 'POST', body: JSON.stringify({ name: SHEET_TITLE, mimeType: 'application/vnd.google-apps.spreadsheet', appProperties: { finansyApp: '1' } }) });
+    const meta = await gfetch(SHEETS + f.id + '?fields=sheets.properties');
+    const sid = meta.sheets[0].properties.sheetId;
+    await gfetch(SHEETS + f.id + ':batchUpdate', { method: 'POST', body: JSON.stringify({ requests: [
+      { updateSheetProperties: { properties: { sheetId: sid, title: OPS_TAB, gridProperties: { frozenRowCount: 1 } }, fields: 'title,gridProperties.frozenRowCount' } },
+      { updateCells: { range: { sheetId: sid, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: HEAD.length }, fields: 'userEnteredValue,userEnteredFormat.textFormat.bold',
+          rows: [{ values: HEAD.map(h => ({ userEnteredValue: { stringValue: h }, userEnteredFormat: { textFormat: { bold: true } } })) }] } },
+      { repeatCell: { range: { sheetId: sid, startRowIndex: 1, startColumnIndex: 1, endColumnIndex: 2 }, cell: { userEnteredFormat: { numberFormat: { type: 'DATE', pattern: 'dd.mm.yyyy' } } }, fields: 'userEnteredFormat.numberFormat' } },
+      { repeatCell: { range: { sheetId: sid, startRowIndex: 1, startColumnIndex: 6, endColumnIndex: 7 }, cell: { userEnteredFormat: { numberFormat: { type: 'NUMBER', pattern: '#,##0.00 "zł"' } } }, fields: 'userEnteredFormat.numberFormat' } },
+      { setDataValidation: { range: { sheetId: sid, startRowIndex: 1, startColumnIndex: 8, endColumnIndex: 9 }, rule: { condition: { type: 'BOOLEAN' } } } },
+      { setDataValidation: { range: { sheetId: sid, startRowIndex: 1, startColumnIndex: 2, endColumnIndex: 3 }, rule: { condition: { type: 'ONE_OF_LIST', values: Object.values(TYPE_UK).map(v => ({ userEnteredValue: v })) }, showCustomUi: true, strict: false } } },
+      { setDataValidation: { range: { sheetId: sid, startRowIndex: 1, startColumnIndex: 3, endColumnIndex: 4 }, rule: { condition: { type: 'ONE_OF_LIST', values: Object.values(CATS).map(c => ({ userEnteredValue: c.uk })) }, showCustomUi: true, strict: false } } },
+      { autoResizeDimensions: { dimensions: { sheetId: sid, dimension: 'COLUMNS', startIndex: 0, endIndex: HEAD.length } } },
+    ] }) });
+    store.set('g.sheet', f.id);
+    return f.id;
+  },
+  async call(fn) {
+    try { return await fn(await this.ensure()); }
+    catch (e) { if (e.notFound) { store.del('g.sheet'); return fn(await this.ensure()); } throw e; }
+  },
+  rowValues(id, op, source) {
+    return [id, ymdToSerial(op.date), TYPE_UK[op.type] || 'Витрата', CATS[op.cat] ? CATS[op.cat].uk : 'Інше', op.sub || '', op.desc || '', op.amount, source, !!op.check, ''];
+  },
+  async checkRow(id, o) {
+    const cur = await gfetch(SHEETS + id + '/values/' + encodeURIComponent(OPS_TAB + '!A' + o.row));
+    const curId = String((cur.values && cur.values[0] && cur.values[0][0]) || '') || 'ROW' + o.row;
+    if (!o.row || curId !== o.id) throw new Error('Рядок змінився в таблиці. Оновіть застосунок і спробуйте ще раз');
+  },
+  async append(sheetId, rows) {
+    const r = await gfetch(SHEETS + sheetId + '/values/' + encodeURIComponent(OPS_TAB + '!A:J') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS&includeValuesInResponse=false', { method: 'POST', body: JSON.stringify({ values: rows }) });
+    const m = String(r.updates && r.updates.updatedRange || '').match(/!A(\d+)/);
+    return m ? +m[1] : null;
+  },
+};
+const backend = {
+  mode() { return store.get('backend', store.get('url', '') && store.get('key', '') ? 'script' : 'google'); },
+  ready() { return this.mode() === 'script' ? !!(store.get('url', '') && store.get('key', '')) : !!auth.token(); },
+  async list() {
+    if (this.mode() === 'script') return (await api.call('list')).ops;
+    return gsheet.call(async id => {
+      const r = await gfetch(SHEETS + id + '/values/' + encodeURIComponent(OPS_TAB + '!A2:J') + '?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER');
+      const out = [];
+      (r.values || []).forEach((v, i) => {
+        const date = cellDate(v[1]), amount = cellAmount(v[6]);
+        if (!date || !amount) return;
+        const type = typeFrom(v[2]);
+        out.push({ row: i + 2, id: String(v[0] || '') || 'ROW' + (i + 2), date, type, cat: type === 'Доход' ? 'Доходы' : catFrom(v[3]), sub: String(v[4] || ''), desc: String(v[5] || ''), amount, source: String(v[7] || ''), check: v[8] === true || String(v[8]).toUpperCase() === 'TRUE' });
+      });
+      return out;
+    });
+  },
+  async add(op) {
+    if (this.mode() === 'script') return (await api.call('add', { op })).op;
+    return gsheet.call(async id => {
+      const oid = 'APP' + ymd(new Date()).replace(/-/g, '') + '_' + rid().slice(0, 8);
+      const row = await gsheet.append(id, [gsheet.rowValues(oid, op, 'Застосунок')]);
+      return { ...op, id: oid, row, source: 'Застосунок', check: false };
+    });
+  },
+  async import(ops) {
+    if (this.mode() === 'script') return api.call('import', { ops });
+    return gsheet.call(async id => {
+      const have = await gfetch(SHEETS + id + '/values/' + encodeURIComponent(OPS_TAB + '!A2:A'));
+      const seen = new Set((have.values || []).map(r => String(r[0] || '')));
+      const rows = [], added = []; let skipped = 0;
+      for (const op of ops) {
+        const oid = 'BNK_' + await sha([op.date, op.type, (+op.amount).toFixed(2), op.raw || op.desc].join('|'));
+        if (seen.has(oid)) { skipped++; continue; }
+        seen.add(oid); rows.push(gsheet.rowValues(oid, op, 'Виписка')); added.push({ ...op, id: oid, source: 'Виписка' });
+      }
+      if (rows.length) { const first = await gsheet.append(id, rows); added.forEach((o, i) => { o.row = first ? first + i : null; }); }
+      return { added, skipped };
+    });
+  },
+  async update(o, next) {
+    if (this.mode() === 'script') return api.call('update', { id: o.id, row: o.row, ...next });
+    return gsheet.call(async id => {
+      await gsheet.checkRow(id, o);
+      await gfetch(SHEETS + id + '/values:batchUpdate', { method: 'POST', body: JSON.stringify({ valueInputOption: 'RAW', data: [
+        { range: OPS_TAB + '!C' + o.row + ':E' + o.row, values: [[TYPE_UK[next.type] || 'Витрата', CATS[next.cat] ? CATS[next.cat].uk : 'Інше', next.sub || '']] },
+        { range: OPS_TAB + '!I' + o.row, values: [[false]] },
+      ] }) });
+    });
+  },
+  /* Повне редагування (вікно «Редагування») */
+  async edit(o, d) {
+    if (this.mode() === 'script') {
+      const r = await api.call('update', { id: o.id, row: o.row, ...d });
+      if (!(r.v >= 2)) throw new Error('Скрипт таблиці ще стара версія: змінилися лише тип і категорія. Оновіть функцію update_ у «Фінанси API»');
+      return;
+    }
+    return gsheet.call(async id => {
+      await gsheet.checkRow(id, o);
+      await gfetch(SHEETS + id + '/values:batchUpdate', { method: 'POST', body: JSON.stringify({ valueInputOption: 'RAW', data: [
+        { range: OPS_TAB + '!B' + o.row + ':G' + o.row, values: [[ymdToSerial(d.date), TYPE_UK[d.type] || 'Витрата', CATS[d.cat] ? CATS[d.cat].uk : 'Інше', d.sub || '', d.desc || '', d.amount]] },
+        { range: OPS_TAB + '!I' + o.row, values: [[false]] },
+      ] }) });
+    });
+  },
+  async remove(o) {
+    if (this.mode() === 'script') {
+      const r = await api.call('update', { id: o.id, row: o.row, remove: true });
+      if (!r.removed) throw new Error('Скрипт таблиці ще стара версія і не вміє видаляти. Оновіть функцію update_ у «Фінанси API»');
+      return;
+    }
+    return gsheet.call(async id => {
+      await gsheet.checkRow(id, o);
+      const meta = await gfetch(SHEETS + id + '?fields=sheets.properties');
+      const tab = (meta.sheets || []).map(x => x.properties).find(p => p.title === OPS_TAB);
+      if (!tab) throw new Error('Не знайдено аркуш «' + OPS_TAB + '»');
+      await gfetch(SHEETS + id + ':batchUpdate', { method: 'POST', body: JSON.stringify({ requests: [
+        { deleteDimension: { range: { sheetId: tab.sheetId, dimension: 'ROWS', startIndex: o.row - 1, endIndex: o.row } } },
+      ] }) });
+    });
+  },
+};
+
+/* --- Розширений режим: своя таблиця через Apps Script --- */
 const api = {
   conf() { return { url: store.get('url', ''), key: store.get('key', '') }; },
-  ready() { const c = this.conf(); return !!(c.url && c.key); },
   async call(action, body = {}, conf = this.conf()) {
     if (!conf.url || !conf.key) throw new Error('Застосунок ще не підключено до таблиці');
     let res;
@@ -482,6 +687,7 @@ const api = {
     return data;
   },
 };
+
 function cacheOps() {
   try { store.set('ops', JSON.stringify({ at: Date.now(), ops: S.ops.map(o => ({ ...o, date: ymd(o.date) })) })); } catch (e) {}
 }
@@ -489,46 +695,79 @@ function cachedOps() {
   try { const c = JSON.parse(store.get('ops', '')); return { at: c.at, ops: c.ops.map(toOp) }; } catch (e) { return null; }
 }
 async function loadOperations() {
-  const data = await api.call('list');
-  return data.ops.map(toOp).sort((a, b) => b.date - a.date || b.row - a.row);
+  return (await backend.list()).map(toOp).sort((a, b) => b.date - a.date || b.row - a.row);
 }
 const tFmt = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' });
 function setStatus(kind, text) {
   const el = $('status');
   el.classList.toggle('err-line', kind === 'err');
   const tag = { ok: '✓', err: '!', load: '…', off: '⚙' }[kind];
-  el.innerHTML = `<b>${tag}</b> <span>${esc(text)}</span>` + (kind === 'err' ? ' <button type="button" id="st-retry">Повторити</button>' : kind === 'off' ? ' <button type="button" id="st-set">Підключити</button>' : '');
+  el.innerHTML = `<b>${tag}</b> <span>${esc(text)}</span>` + (kind === 'err' ? ' <button type="button" id="st-retry">Повторити</button>' : kind === 'off' ? ' <button type="button" id="st-set">Увійти</button>' : '');
   const r = $('st-retry'); if (r) r.onclick = () => refresh(true);
-  const s = $('st-set'); if (s) s.onclick = openSettings;
+  const s = $('st-set'); if (s) s.onclick = openWelcome;
+}
+/* Перехоплює завершену сесію Google: тихо оновлює вхід або просить увійти */
+function handleErr(e) {
+  if (e instanceof AuthExpired) {
+    const recently = Date.now() - +store.get('g.tried', 0) < 30e3;
+    if (auth.email() && !recently) { setStatus('load', 'Оновлюю вхід у Google…'); auth.go(true); return true; }
+    setStatus('off', 'Потрібно увійти в Google'); return true;
+  }
+  return false;
 }
 let loading = null;
 async function refresh(showSpinner) {
-  if (!api.ready()) { setStatus('off', 'Таблицю не підключено'); return; }
+  if (!backend.ready() && !(backend.mode() === 'google' && auth.email())) { setStatus('off', 'Ви ще не увійшли'); return; }
   if (loading) return loading;
   if (showSpinner) setStatus('load', 'Оновлюю дані з таблиці…');
   loading = (async () => {
     try {
+      if (backend.mode() === 'google' && !auth.email()) await gsheet.me();
       S.ops = await loadOperations();
       cacheOps();
       TODAY = new Date();
       render(); if (S.view === 'reports') renderReports();
       setStatus('ok', 'Оновлено о ' + tFmt.format(new Date()) + ' · ' + plural(S.ops.length, 'операція', 'операції', 'операцій'));
     } catch (e) {
+      if (handleErr(e)) return;
       const c = cachedOps();
       setStatus('err', e.message + (c ? '. Показую збережене о ' + tFmt.format(new Date(c.at)) : ''));
     } finally { loading = null; }
   })();
   return loading;
 }
+const G_LOGO = '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+function openWelcome(msg) {
+  const noId = !GOOGLE_CLIENT_ID;
+  openSheet(`<h3><span>Вітаємо у «Фінансах»</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
+    <div class="hint" style="text-align:left">Облік витрат і доходів на телефоні. Ваші записи зберігаються у <b>вашому</b> Google Drive у таблиці «${SHEET_TITLE}» — ви можете відкрити її будь-коли. Застосунок бачить лише цю таблицю і більше нічого з вашого Drive.</div>
+    ${msg ? `<div class="err">${esc(msg)}</div>` : ''}
+    <button class="save g-btn" type="button" id="g-in" ${noId ? 'disabled' : ''}>${G_LOGO}<span>Увійти через Google</span></button>
+    ${noId ? '<div class="hint">Вхід через Google ще налаштовується.</div>' : ''}
+    <div class="hint"><a href="privacy.html" target="_blank" rel="noopener">Політика конфіденційності</a> · <button class="link-btn" type="button" id="adv">Розширено: своя таблиця Apps Script</button></div>`);
+  $('g-in').onclick = () => { store.set('backend', 'google'); auth.go(false); };
+  $('adv').onclick = openScriptSettings;
+}
 function openSettings() {
+  if (backend.mode() === 'script') return openScriptSettings();
+  if (!auth.email() && !backend.ready()) return openWelcome();
+  const sid = gsheet.id();
+  openSheet(`<h3><span>Обліковий запис</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
+    <div class="hint" style="text-align:left">Ви увійшли як <b>${esc(auth.email() || '…')}</b>. Записи зберігаються у вашому Google Drive у таблиці «${SHEET_TITLE}».</div>
+    ${sid ? `<a class="ghost" style="text-align:center;text-decoration:none;color:inherit" href="https://docs.google.com/spreadsheets/d/${encodeURIComponent(sid)}/edit" target="_blank" rel="noopener">Відкрити мою таблицю</a>` : ''}
+    <button class="ghost" type="button" id="g-out">Вийти з облікового запису</button>
+    <div class="hint"><a href="privacy.html" target="_blank" rel="noopener">Політика конфіденційності</a></div>`);
+  $('g-out').onclick = () => { auth.signOut(); S.ops = []; closeSheet(); render(); renderReports(); setStatus('off', 'Ви вийшли'); openWelcome(); };
+}
+function openScriptSettings() {
   const c = api.conf();
-  openSheet(`<h3><span>Підключення до таблиці</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
-    <div class="hint" style="text-align:left">Адреса і ключ зберігаються лише на цьому пристрої. На iPhone вводьте їх у застосунку з початкового екрана — він не бачить налаштувань із Safari.</div>
+  openSheet(`<h3><span>Своя таблиця (Apps Script)</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
+    <div class="hint" style="text-align:left">Для тих, хто має власний скрипт таблиці. Адреса і ключ зберігаються лише на цьому пристрої. На iPhone вводьте їх у застосунку з початкового екрана.</div>
     <label class="field"><span>Адреса веб-застосунку Apps Script</span><input id="s-url" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(c.url)}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
     <label class="field"><span>Ключ доступу</span><input id="s-key" type="password" placeholder="Ключ із журналу виконання createKey" value="${esc(c.key)}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
     <div class="err" id="s-err" hidden></div>
     <button class="save" type="button" id="s-save">Перевірити і зберегти</button>
-    ${c.url || c.key ? '<button class="ghost" type="button" id="s-clear">Відключити цей пристрій</button>' : ''}`);
+    ${backend.mode() === 'script' ? '<button class="ghost" type="button" id="s-clear">Відключити і повернутися до входу через Google</button>' : ''}`);
   $('s-save').onclick = async () => {
     const conf = { url: $('s-url').value.trim(), key: $('s-key').value.trim() };
     const err = $('s-err'); err.hidden = true;
@@ -537,12 +776,12 @@ function openSettings() {
     const btn = $('s-save'); btn.disabled = true; btn.textContent = 'Перевіряю…';
     try {
       const r = await api.call('ping', {}, conf);
-      store.set('url', conf.url); store.set('key', conf.key);
+      store.set('url', conf.url); store.set('key', conf.key); store.set('backend', 'script'); store.del('ops');
       closeSheet(); toast('Підключено: ' + r.name);
       refresh(true);
     } catch (e) { err.textContent = e.message; err.hidden = false; btn.disabled = false; btn.textContent = 'Перевірити і зберегти'; }
   };
-  const cl = $('s-clear'); if (cl) cl.onclick = () => { ['url', 'key', 'ops'].forEach(k => store.del(k)); S.ops = []; closeSheet(); render(); renderReports(); setStatus('off', 'Таблицю не підключено'); };
+  const cl = $('s-clear'); if (cl) cl.onclick = () => { ['url', 'key', 'ops', 'backend'].forEach(k => store.del(k)); S.ops = []; closeSheet(); render(); renderReports(); setStatus('off', 'Ви ще не увійшли'); openWelcome(); };
 }
 
 /* ===== Стан ===== */
@@ -727,8 +966,8 @@ function openReview() {
     const done = async (patch = {}) => {
       item.querySelectorAll('select, button').forEach(x => x.disabled = true);
       const next = { cat: o.cat, sub: o.sub, type: o.type, ...patch };
-      try { await api.call('update', { id: o.id, row: o.row, ...next }); }
-      catch (e) { toast(e.message); item.querySelectorAll('select, button').forEach(x => x.disabled = false); return; }
+      try { await backend.update(o, next); }
+      catch (e) { if (handleErr(e)) return; toast(e.message); item.querySelectorAll('select, button').forEach(x => x.disabled = false); return; }
       Object.assign(o, next); o.check = false; cacheOps();
       const finish = () => {
         item.remove();
@@ -851,36 +1090,33 @@ function openEditor(op) {
     if (!(amount > 0)) return fail('Введіть суму більшу за нуль, наприклад 24,90.');
     if (!form.cat) return fail('Оберіть категорію.');
     if (!/^\d{4}-\d{2}-\d{2}$/.test($('f-date').value)) return fail('Оберіть дату.');
-    if (!api.ready()) return fail('Спершу підключіть таблицю (⚙ угорі).');
+    if (!backend.ready() && !auth.email()) return fail('Спершу увійдіть (⚙ угорі).');
     const data = { date: $('f-date').value, type: form.type, cat: form.cat, sub: $('f-sub').value.trim(),
       desc: $('f-desc').value.trim() || catOf(form.cat).uk, amount: Math.round(amount * 100) / 100 };
     const btn = $('f-save'); busy(btn, true, 'Зберігаю…'); err.hidden = true;
     try {
       if (edit) {
-        const r = await api.call('update', { id: op.id, row: op.row, ...data });
-        if (!(r.v >= 2)) throw new Error('Скрипт таблиці ще стара версія: змінилися лише тип і категорія. Оновіть функцію update_ у «Фінанси API»');
+        await backend.edit(op, data);
         Object.assign(op, toOp(data), { check: false });
       } else {
-        const r = await api.call('add', { op: data });
-        S.ops.unshift(toOp(r.op));
+        S.ops.unshift(toOp(await backend.add(data)));
       }
       S.ops.sort((a, b) => b.date - a.date); cacheOps();
       closeSheet(); render(); renderReports(); if (S.view === 'search') renderSearch();
       toast(edit ? 'Зміни збережено в таблиці' : 'Записано в таблицю');
-    } catch (e) { fail(e.message); busy(btn, false, edit ? 'Зберегти зміни' : 'Зберегти'); }
+    } catch (e) { if (handleErr(e)) return; fail(e.message); busy(btn, false, edit ? 'Зберегти зміни' : 'Зберегти'); }
   };
   if (edit) $('f-del').onclick = async () => {
     const btn = $('f-del');
     if (!form.armed) { form.armed = true; btn.textContent = 'Натисніть ще раз, щоб видалити'; btn.classList.add('armed'); return; }
-    if (!api.ready()) return fail('Спершу підключіть таблицю (⚙ угорі).');
+    if (!backend.ready() && !auth.email()) return fail('Спершу увійдіть (⚙ угорі).');
     busy(btn, true, 'Видаляю…'); err.hidden = true;
     try {
-      const r = await api.call('update', { id: op.id, row: op.row, remove: true });
-      if (!r.removed) throw new Error('Скрипт таблиці ще стара версія і не вміє видаляти. Оновіть функцію update_ у «Фінанси API»');
+      await backend.remove(op);
       S.ops = await loadOperations(); cacheOps();   // номери рядків після видалення зсуваються
       closeSheet(); render(); renderReports(); if (S.view === 'search') renderSearch();
       toast('Операцію видалено з таблиці');
-    } catch (e) { fail(e.message); busy(btn, false, 'Видалити операцію'); btn.classList.remove('armed'); form.armed = false; }
+    } catch (e) { if (handleErr(e)) return; fail(e.message); busy(btn, false, 'Видалити операцію'); btn.classList.remove('armed'); form.armed = false; }
   };
 }
 // Будь-яка операція у списках відкривається для редагування
@@ -1233,16 +1469,16 @@ $('imp-cancel').onclick = resetImport;
 $('drop').addEventListener('drop', e => readFile(e.dataTransfer.files[0]));
 $('imp-save').onclick = async () => {
   const on = IMP.rows.filter(r => r.on);
-  if (!api.ready()) { toast('Спершу підключіть таблицю (⚙ угорі)'); return; }
+  if (!backend.ready() && !auth.email()) { toast('Спершу увійдіть (⚙ угорі)'); return; }
   const btn = $('imp-save'); btn.disabled = true; btn.textContent = 'Записую…';
   try {
-    const r = await api.call('import', { ops: on.map(x => ({ date: ymd(x.date), type: x.type, cat: x.cat, sub: x.sub, desc: x.desc, amount: x.amount, check: x.check, raw: x.raw })) });
+    const r = await backend.import( on.map(x => ({ date: ymd(x.date), type: x.type, cat: x.cat, sub: x.sub, desc: x.desc, amount: x.amount, check: x.check, raw: x.raw })));
     r.added.forEach(o => S.ops.push(toOp(o)));
     S.ops.sort((a, b) => b.date - a.date); cacheOps();
     resetImport(); render(); renderReports();
     go('home');
     toast('Записано ' + plural(r.added.length, 'операцію', 'операції', 'операцій') + (r.skipped ? ', пропущено вже наявних: ' + r.skipped : ''));
-  } catch (e) { toast(e.message); renderImport(); }
+  } catch (e) { if (handleErr(e)) return; toast(e.message); renderImport(); }
 };
 
 matchMedia('(min-width: 960px)').addEventListener('change', () => { S.opsShown = baseShown(); render(); });
@@ -1250,12 +1486,19 @@ matchMedia('(min-width: 960px)').addEventListener('change', () => { S.opsShown =
 (async function start() {
   const t = store.get('theme', ''); if (t) document.documentElement.dataset.theme = t;
   S.period = store.get('period', 'month'); S.mode = store.get('mode', 'list');
+  const back = auth.takeRedirect();
   const c = cachedOps(); S.ops = c ? c.ops : [];
   S.anim = true;
   render(); renderReports();
   if (S.mode === 'list') stagger($('list-mode'), '.card, .cat-row, .chip, .day, .op', 30);
   $('set-btn').onclick = openSettings;
-  if (api.ready()) refresh(true); else { setStatus('off', 'Таблицю не підключено'); openSettings(); }
+  if (backend.mode() === 'script') { if (backend.ready()) refresh(true); else { setStatus('off', 'Ви ще не увійшли'); openWelcome(); } return; }
+  if (back === 'ok') { store.del('g.tried'); refresh(true); }
+  else if (back === 'need-login') { setStatus('off', 'Потрібно увійти в Google'); openWelcome(); }
+  else if (back === 'no-scope') { setStatus('off', 'Немає дозволу на таблицю'); openWelcome('Щоб застосунок працював, на екрані Google дозвольте доступ до файлів, які створює застосунок.'); }
+  else if (back === 'denied') { setStatus('off', 'Вхід не завершено'); openWelcome('Вхід не завершено. Спробуйте ще раз.'); }
+  else if (auth.token() || auth.email()) refresh(true);
+  else { setStatus('off', 'Ви ще не увійшли'); openWelcome(); }
 })();
 // Повернулись у застосунок — підтягнути нові записи (напр., із шорткату)
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('sheet').hidden) refresh(false); });
