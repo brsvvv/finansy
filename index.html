@@ -263,6 +263,31 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
 .toast { position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; z-index: 20; max-width: calc(100% - 32px); text-align: center; }
 
+/* ===== Налаштування ===== */
+.acct { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; text-align: left; border: 0; background: var(--surface-2); border-radius: 18px; padding: 12px 14px; }
+.acct .av { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+.acct-t { display: grid; min-width: 0; }
+.acct-t b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-t small { color: var(--muted); font-size: 13px; }
+.chev { color: var(--muted); font-size: 24px; line-height: 1; }
+.pgroup { display: grid; gap: 10px; }
+.pgroup h4 { margin: 6px 0 0; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+.seg3 { grid-template-columns: repeat(3, 1fr); background: var(--surface-2); }
+.seg3 button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.icons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.icons button { border: 2px solid transparent; background: var(--surface-2); border-radius: 20px; padding: 14px 6px 10px; display: grid; justify-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+.icons img { width: 64px; height: 64px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+.icons button[aria-pressed="true"] { border-color: var(--accent); }
+.steps { list-style: none; margin: 0; padding: 14px; background: var(--surface-2); border-radius: 18px; display: grid; gap: 12px; counter-reset: st; }
+.steps li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; line-height: 1.35; }
+.steps li::before { counter-increment: st; content: counter(st); width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+.steps .ghost { margin-top: 8px; padding: 10px 14px; font-size: 14px; width: 100%; }
+.steps code { font-size: 12px; word-break: break-all; color: var(--muted); }
+.rows { display: grid; background: var(--surface-2); border-radius: 18px; overflow: hidden; }
+.rows button { border: 0; background: transparent; display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; min-height: 48px; font-weight: 600; text-align: left; }
+.rows button + button { border-top: 1px solid var(--line); }
+.rows button[aria-checked="true"]::after { content: "✓"; color: var(--accent); font-weight: 800; }
+
 /* ===== Комп'ютер: бокове меню + дві колонки ===== */
 @media (hover: hover) {
   .cat-row:hover .name, .op:hover .t1 { color: var(--accent); }
@@ -335,16 +360,13 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
     <div class="top-left">
       <button class="chip-btn icon-btn menu-btn" type="button" id="menu-btn" aria-label="Меню" aria-expanded="false">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <button class="chip-btn icon-btn" type="button" id="set-btn" aria-label="Налаштування">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       <h1 id="title">Фінанси</h1>
     </div>
     <div class="top-actions">
       <button class="chip-btn top-add" type="button" id="top-add">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Додати операцію</button>
-      <button class="chip-btn icon-btn" type="button" id="set-btn" aria-label="Підключення до таблиці">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
-      <button class="chip-btn icon-btn" type="button" id="theme-btn" aria-label="Змінити тему">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-      </button>
     </div>
   </header>
   <div class="sample" id="status" role="status"><b>…</b> Завантаження</div>
@@ -1190,12 +1212,94 @@ document.querySelectorAll('.nav button').forEach(b => b.onclick = () => go(b.dat
 $('top-add').onclick = openAdd;
 $('menu-btn').onclick = () => { const on = $('dock').classList.toggle('pinned'); $('menu-btn').setAttribute('aria-expanded', String(on)); };
 document.addEventListener('click', e => { if ($('dock').classList.contains('pinned') && !e.target.closest('.dock, #menu-btn')) { $('dock').classList.remove('pinned'); $('menu-btn').setAttribute('aria-expanded', 'false'); } });
-$('theme-btn').onclick = () => {
-  const root = document.documentElement;
-  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : !matchMedia('(prefers-color-scheme: light)').matches;
-  root.dataset.theme = dark ? 'light' : 'dark';
-  store.set('theme', root.dataset.theme);
+/* ===== Налаштування: обліковий запис, тема, іконка, мова ===== */
+const ICONS = {
+  coral:   { file: 'icon-180.png',         name: 'Корал' },
+  night:   { file: 'icon-night-180.png',   name: 'Ніч' },
+  emerald: { file: 'icon-emerald-180.png', name: 'Смарагд' },
 };
+const LANGS = { uk: 'Українська', pl: 'Polski', ru: 'Русский', en: 'English' };
+const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const isAndroid = () => /Android/i.test(navigator.userAgent);
+const curIcon = () => ICONS[store.get('icon', '')] ? store.get('icon', '') : 'coral';
+/* iPhone бере іконку з apple-touch-icon у момент «На екран Додому» */
+function applyIcon(id) {
+  const f = (ICONS[id] || ICONS.coral).file;
+  document.querySelectorAll('link[rel="apple-touch-icon"]').forEach(l => l.href = f);
+}
+function setTheme(v) {
+  const root = document.documentElement;
+  if (v) { root.dataset.theme = v; store.set('theme', v); } else { delete root.dataset.theme; store.del('theme'); }
+}
+function iconLink(id) { const u = new URL('./', location.href); u.searchParams.set('icon', id); return u.href; }
+function iconSteps(id) {
+  const name = ICONS[id].name;
+  if (isAndroid()) return `<div class="hint" style="text-align:left">На Android іконка однакова для всіх («Корал») і оновлюється сама. Вибір діє лише на iPhone.</div>`;
+  const relogin = '<li><span>Відкрийте новий застосунок і увійдіть знову. Записи нікуди не зникнуть — вони у вашій таблиці.</span></li>';
+  if (isStandalone()) return `<ol class="steps">
+      <li><span>Скопіюйте посилання з іконкою «${name}».<button class="ghost" type="button" id="p-copy">Скопіювати посилання</button><code id="p-link" hidden>${esc(iconLink(id))}</code></span></li>
+      <li><span>Утримайте іконку «Фінанси» на екрані «Додому» → <b>Видалити</b>.</span></li>
+      <li><span>Відкрийте <b>Safari</b> і вставте посилання в адресний рядок.</span></li>
+      <li><span>Натисніть <b>Поділитися</b> → <b>На екран «Додому»</b> → <b>Додати</b>.</span></li>
+      ${relogin}</ol>`;
+  return `<ol class="steps">
+      <li><span>Якщо «Фінанси» вже є на екрані «Додому» — утримайте іконку → <b>Видалити</b>.</span></li>
+      <li><span>Тут, у Safari, натисніть <b>Поділитися</b> → <b>На екран «Додому»</b> → <b>Додати</b>.</span></li>
+      ${relogin}</ol>`;
+}
+function bindIconSteps() {
+  const c = $('p-copy'); if (!c) return;
+  c.onclick = async () => {
+    const link = $('p-link').textContent;
+    try { await navigator.clipboard.writeText(link); toast('Посилання скопійовано'); }
+    catch (e) { $('p-link').hidden = false; toast('Скопіюйте посилання вручну'); }
+  };
+}
+function openPrefs() {
+  const mode = backend.mode();
+  const who = mode === 'script' && backend.ready() ? 'Своя таблиця (Apps Script)' : auth.email();
+  const initial = who ? esc(who.trim()[0].toUpperCase()) : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>';
+  const theme = store.get('theme', '');
+  const icon = curIcon();
+  const lang = LANGS[store.get('lang', '')] ? store.get('lang', '') : 'uk';
+  openSheet(`<h3><span>Налаштування</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
+    <button class="acct" type="button" id="p-acct">
+      <span class="av">${initial}</span>
+      <span class="acct-t"><b>${who ? esc(who) : 'Увійти'}</b><small>${who ? 'Обліковий запис і таблиця' : 'Підключіть свою таблицю'}</small></span>
+      <span class="chev" aria-hidden="true">›</span></button>
+    <section class="pgroup"><h4>Тема</h4>
+      <div class="seg seg3" role="group" aria-label="Тема">
+        <button type="button" data-th="" aria-pressed="${theme === ''}">Авто</button>
+        <button type="button" data-th="light" aria-pressed="${theme === 'light'}">Світла</button>
+        <button type="button" data-th="dark" aria-pressed="${theme === 'dark'}">Темна</button>
+      </div></section>
+    <section class="pgroup"><h4>Іконка застосунку</h4>
+      <div class="icons" role="group" aria-label="Іконка застосунку">
+        ${Object.entries(ICONS).map(([k, v]) => `<button type="button" data-ic="${k}" aria-pressed="${k === icon}"><img src="${v.file}" alt="" width="64" height="64">${v.name}</button>`).join('')}
+      </div>
+      <div class="hint" style="text-align:left">iPhone запам'ятовує іконку, коли застосунок додають на екран «Додому». Щоб побачити нову іконку:</div>
+      <div id="p-steps">${iconSteps(icon)}</div></section>
+    <section class="pgroup"><h4>Мова</h4>
+      <div class="rows" role="radiogroup" aria-label="Мова">
+        ${Object.entries(LANGS).map(([k, v]) => `<button type="button" role="radio" data-lg="${k}" aria-checked="${k === lang}">${v}</button>`).join('')}
+      </div></section>`);
+  $('p-acct').onclick = openSettings;
+  document.querySelectorAll('[data-th]').forEach(b => b.onclick = () => {
+    setTheme(b.dataset.th);
+    document.querySelectorAll('[data-th]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  });
+  document.querySelectorAll('[data-ic]').forEach(b => b.onclick = () => {
+    store.set('icon', b.dataset.ic); applyIcon(b.dataset.ic);
+    document.querySelectorAll('[data-ic]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    $('p-steps').innerHTML = iconSteps(b.dataset.ic); bindIconSteps();
+  });
+  bindIconSteps();
+  document.querySelectorAll('[data-lg]').forEach(b => b.onclick = () => {
+    store.set('lang', b.dataset.lg);
+    document.querySelectorAll('[data-lg]').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+    if (b.dataset.lg !== 'uk') toast('Переклад цією мовою з\'явиться в наступному оновленні');
+  });
+}
 
 /* ===== Імпорт виписки =====
    Розбір CSV у браузері + словник продавців (той самий, що в Apps Script). */
@@ -1502,13 +1606,15 @@ matchMedia('(min-width: 960px)').addEventListener('change', () => { S.opsShown =
 
 (async function start() {
   const t = store.get('theme', ''); if (t) document.documentElement.dataset.theme = t;
+  const qi = new URLSearchParams(location.search).get('icon'); if (ICONS[qi]) store.set('icon', qi);
+  applyIcon(curIcon());
   S.period = store.get('period', 'month'); S.mode = store.get('mode', 'list');
   const back = auth.takeRedirect();
   const c = cachedOps(); S.ops = c ? c.ops : [];
   S.anim = true;
   render(); renderReports();
   if (S.mode === 'list') stagger($('list-mode'), '.card, .cat-row, .chip, .day, .op', 30);
-  $('set-btn').onclick = openSettings;
+  $('set-btn').onclick = openPrefs;
   if (backend.mode() === 'script') { if (backend.ready()) refresh(true); else { setStatus('off', 'Ви ще не увійшли'); openWelcome(); } return; }
   if (back === 'ok') { store.del('g.tried'); refresh(true); }
   else if (back === 'need-login') { setStatus('off', 'Потрібно увійти в Google'); openWelcome(); }
