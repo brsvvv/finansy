@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0e0c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f0e8" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Фінанси">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23e7b54a'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' font-family='Arial' font-weight='700' fill='%231d1606'%3Ez%C5%82%3C/text%3E%3C/svg%3E">
+<style>
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; -webkit-text-size-adjust: 100%; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+<title>Фінанси Ігоря</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: одна мобільна колонка до 520px, картки-секції, нижня навігація-«пігулка» і кнопка «Додати» над нею */
+:root {
+  --bg: #0f0e0c;          /* графіт з теплим відтінком */
+  --surface: #1b1a17;
+  --surface-2: #26241f;
+  --line: #34312a;
+  --fg: #f4f1ea;
+  --muted: #a39d90;
+  --accent: #e7b54a;      /* шафран */
+  --accent-ink: #1d1606;
+  --good: #3fbf74;
+  --warn: #f0a33a;
+  --warn-bg: #3a2c12;
+  --scrim: rgba(0,0,0,.55);
+  --font-display: "Nunito", ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --font-body: "Nunito", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --c1:#e7b54a; --c2:#e7704a; --c3:#4aa8e7; --c4:#3fbf9a; --c5:#9a7ee8; --c6:#e75a8c;
+  --c7:#7fc24a; --c8:#d98be0; --c9:#5ad1d6; --c10:#e8d14a; --c11:#f08a5d; --c12:#8f8a7e;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg:#f3f0e8; --surface:#fffdf8; --surface-2:#ece7dc; --line:#ddd6c7; --fg:#1d1b16; --muted:#6d675b;
+    --accent:#c98d12; --accent-ink:#fffaf0; --good:#1f8f50; --warn:#b86e05; --warn-bg:#fbedd2; --scrim:rgba(30,25,15,.35);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg:#f3f0e8; --surface:#fffdf8; --surface-2:#ece7dc; --line:#ddd6c7; --fg:#1d1b16; --muted:#6d675b;
+  --accent:#c98d12; --accent-ink:#fffaf0; --good:#1f8f50; --warn:#b86e05; --warn-bg:#fbedd2; --scrim:rgba(30,25,15,.35);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.4; padding-inline: 16px; padding-block: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.app { max-width: 520px; margin: 0 auto; padding-block: 12px 150px; display: grid; gap: 14px; }
+.app .app { margin: 0; width: 100%; max-width: none; min-width: 0; }
+.app > * { min-width: 0; }
+.top-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.top .menu-btn, .top .top-add, .edge { display: none; }
+
+/* шапка */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 6px; }
+.top h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(26px, 8vw, 34px); margin: 0; letter-spacing: -.01em; }
+.top-actions { display: flex; gap: 8px; }
+.chip-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+.icon-btn { width: 40px; height: 40px; padding: 0; justify-content: center; }
+.sample { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.sample.err-line { color: var(--c2); }
+.sample.err-line b { background: color-mix(in srgb, var(--c2) 18%, var(--surface-2)); color: var(--c2); }
+.sample button { border: 0; background: transparent; color: var(--accent); font: inherit; font-weight: 700; padding: 0 2px; cursor: pointer; }
+.sample b { background: var(--surface-2); color: var(--fg); border-radius: 6px; padding: 2px 7px; font-weight: 600; letter-spacing: .02em; }
+
+/* періоди */
+.periods { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+.periods::-webkit-scrollbar { display: none; }
+.periods button { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 9px 16px; font-weight: 600; font-size: 14px; color: var(--muted); }
+.periods button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+/* картки */
+.card { background: var(--surface); border-radius: 24px; padding: 18px; display: grid; gap: 12px; }
+.card h2 { margin: 0; font-size: 17px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card h2 small { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+.summary { background: linear-gradient(160deg, var(--surface-2), var(--surface)); }
+.summary .label { color: var(--muted); font-size: 14px; font-weight: 500; }
+.big { font-family: var(--font-display); font-weight: 800; font-size: clamp(34px, 11vw, 46px); letter-spacing: -.02em; line-height: 1.05; }
+.big.neg { color: var(--c2); }
+.summary .meta { color: var(--muted); font-size: 14px; display: grid; gap: 2px; }
+.rate { display: grid; gap: 6px; }
+.rate-bar { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.rate-bar span { display: block; height: 100%; background: var(--good); border-radius: 6px; }
+.review { border: 0; background: var(--warn-bg); color: var(--warn); border-radius: 14px; padding: 12px 14px; font-weight: 600; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border-radius: 999px; padding: 4px; gap: 4px; }
+.seg button { border: 0; background: transparent; border-radius: 999px; padding: 10px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--fg); }
+
+/* категорії */
+.card-head { border: 0; background: transparent; padding: 0; width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 17px; font-weight: 700; text-align: left; }
+.card-head .right { display: inline-flex; align-items: baseline; gap: 10px; }
+.card-head small { font-size: 13px; color: var(--muted); font-weight: 500; }
+.caret { color: var(--muted); display: inline-block; transition: transform .2s; }
+.card-head[aria-expanded="true"] .caret { transform: rotate(180deg); }
+#cat-list { display: grid; gap: 4px; }
+.stack { display: flex; gap: 3px; height: 12px; border-radius: 8px; overflow: hidden; }
+.stack span { min-width: 3px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 6px; }
+.chip { border: 0; background: var(--surface-2); border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+.chip b { color: var(--muted); font-weight: 600; }
+.cat-row { border: 0; background: transparent; padding: 4px 0; display: grid; gap: 7px; text-align: left; width: 100%; }
+.cat-row .head { display: grid; grid-template-columns: 28px 1fr auto 14px; align-items: center; gap: 8px; }
+.cat-row .emo { font-size: 20px; line-height: 1; }
+.cat-row .name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-row .sum { font-weight: 700; }
+.chev { color: var(--muted); }
+.bar { height: 8px; border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+.bar span { display: block; height: 100%; border-radius: 8px; min-width: 4px; }
+.more { border: 0; background: transparent; color: var(--muted); font-weight: 600; padding: 6px; justify-self: center; display: inline-flex; gap: 6px; align-items: center; }
+
+/* операції */
+.ops { display: grid; }
+.op { display: grid; grid-template-columns: 46px 1fr auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.op:last-child { border-bottom: 0; }
+.op .tile { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 22px; }
+.op .txt { min-width: 0; }
+.op .t1 { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.op .t2 { color: var(--muted); font-size: 13px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.op .amt { font-weight: 700; text-align: right; }
+.op .amt.in { color: var(--good); }
+.flag { background: var(--warn-bg); color: var(--warn); font-size: 11px; font-weight: 700; border-radius: 6px; padding: 1px 6px; }
+.day { color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding-top: 10px; }
+.empty { color: var(--muted); text-align: center; padding: 18px 8px; }
+
+/* аналітика */
+.donut-wrap { display: grid; place-items: center; position: relative; }
+.donut-wrap svg { width: min(78vw, 280px); height: auto; display: block; }
+.donut-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; padding: 0 22%; }
+.donut-center .k { color: var(--muted); font-size: 13px; }
+.donut-center .v { font-family: var(--font-display); font-weight: 700; font-size: clamp(18px, 6vw, 24px); }
+.hint { color: var(--muted); font-size: 13px; text-align: center; }
+.legend .head { grid-template-columns: 12px 28px 1fr auto auto; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.pct { color: var(--muted); font-size: 13px; }
+.seg-sector { cursor: pointer; transition: opacity .25s, stroke-width .25s; }
+.legend .cat-row { gap: 6px; }
+.legend .bar { height: 6px; margin-left: 20px; }
+.rv-item { border-bottom: 1px solid var(--line); overflow: hidden; }
+.rv-item:last-child { border-bottom: 0; }
+.rv-item .op { border-bottom: 0; padding-bottom: 6px; }
+.rv-actions { display: flex; gap: 8px; padding: 0 0 12px 58px; flex-wrap: wrap; }
+.rv-actions select { flex: 1; min-width: 160px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); border-radius: 12px; padding: 8px 10px; font: inherit; font-size: 14px; }
+.rv-actions .chip { border: 1px solid var(--line); }
+.rv-done { text-align: center; padding: 24px 8px; display: grid; gap: 6px; }
+.rv-done b { font-size: 17px; }
+
+/* звіти */
+.chart svg { width: 100%; height: auto; display: block; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.stat { background: var(--surface-2); border-radius: 16px; padding: 12px 14px; display: grid; gap: 2px; }
+.stat .k { color: var(--muted); font-size: 13px; }
+.stat .v { font-weight: 700; font-size: 18px; }
+.keys { display: flex; gap: 14px; color: var(--muted); font-size: 13px; }
+.keys span { display: inline-flex; gap: 6px; align-items: center; }
+
+/* пошук */
+.search { display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 4px 14px; }
+.search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--fg); font: inherit; padding: 10px 0; outline: none; }
+
+/* імпорт */
+.drop { border: 2px dashed var(--line); border-radius: 20px; padding: 28px 18px; display: grid; gap: 8px; justify-items: center; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; }
+.drop:hover, .drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.drop .big-ico { font-size: 34px; }
+.drop strong { font-size: 16px; }
+.drop span { color: var(--muted); font-size: 13px; max-width: 46ch; }
+.link-btn { border: 0; background: transparent; color: var(--accent); font-weight: 700; padding: 6px; }
+.imp-list { display: grid; }
+.imp-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.imp-row:last-child { border-bottom: 0; }
+.imp-row input { width: 18px; height: 18px; accent-color: var(--accent); }
+.imp-row .t1 { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imp-row .t2 { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; gap: 6px; align-items: center; }
+.imp-row select { grid-column: 2 / -1; width: 100%; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); border-radius: 12px; padding: 8px 10px; font: inherit; font-size: 14px; }
+.imp-row .amt { font-weight: 700; text-align: right; }
+.imp-row .amt.in { color: var(--good); }
+.imp-row.off { opacity: .45; }
+.imp-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.imp-actions .save { flex: 1; min-width: 200px; }
+.ghost { border: 1px solid var(--line); background: transparent; border-radius: 16px; padding: 14px 18px; font-weight: 700; }
+
+/* нижня частина */
+.dock { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 16px calc(14px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 10px; justify-items: center; pointer-events: none; }
+.dock > * { pointer-events: auto; }
+.add { width: min(100%, 520px); border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 15px; font-weight: 700; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 10px 30px -10px var(--accent); }
+.nav { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px; box-shadow: 0 10px 30px -12px var(--scrim); }
+.nav button { border: 0; background: transparent; border-radius: 999px; padding: 8px 14px; min-width: 0; display: grid; justify-items: center; gap: 2px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.nav button[aria-current="page"] { background: var(--surface-2); color: var(--fg); }
+.nav svg { width: 22px; height: 22px; }
+
+@media (max-width: 370px) {
+  .nav button { padding: 7px 10px; font-size: 11px; }
+  .periods button { padding: 8px 13px; }
+}
+/* планшет: ширше колонка, та сама мобільна навігація */
+@media (min-width: 640px) and (max-width: 959px) {
+  .app { max-width: 700px; }
+  #cat-list.cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; }
+  #an-mode .card { grid-template-columns: 280px minmax(0, 1fr); column-gap: 28px; align-items: center; }
+  #an-mode .legend { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+  .sheet { top: 0; align-items: center; }
+  .sheet-in { border-radius: 26px; width: min(600px, calc(100% - 48px)); }
+}
+
+/* телефон і планшет: кругла кнопка «+» праворуч над навігацією */
+.dock .add { width: 58px; height: 58px; padding: 0; border-radius: 50%; justify-self: end; transition: transform .18s ease; }
+.dock .add svg { width: 26px; height: 26px; }
+.dock .add:active { transform: scale(.92); }
+.add-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* шторка */
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 10; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; display: grid; justify-items: center; }
+.sheet-in { width: min(100%, 560px); max-height: 88vh; overflow-y: auto; background: var(--surface); border-radius: 26px 26px 0 0; padding: 10px 18px calc(22px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 14px; }
+.grab { width: 40px; height: 5px; border-radius: 5px; background: var(--line); justify-self: center; }
+.sheet h3 { margin: 0; font-size: 19px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.x { border: 0; background: var(--surface-2); width: 34px; height: 34px; border-radius: 50%; }
+.field { display: grid; gap: 6px; }
+.field > span { color: var(--muted); font-size: 13px; font-weight: 600; }
+.field input { width: 100%; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); border-radius: 14px; padding: 12px 14px; font: inherit; }
+#f-amount { font-family: var(--font-display); font-size: 26px; font-weight: 700; }
+.cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.cats button { border: 1px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 10px 6px; display: grid; justify-items: center; gap: 4px; font-size: 12px; font-weight: 600; text-align: center; }
+.cats button span { font-size: 22px; }
+.cats button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.save { border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 16px; padding: 15px; font-weight: 700; font-size: 16px; }
+.save:disabled { opacity: .45; cursor: not-allowed; }
+.err { color: var(--c2); font-size: 13px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; z-index: 20; max-width: calc(100% - 32px); text-align: center; }
+
+/* ===== Комп'ютер: бокове меню + дві колонки ===== */
+@media (hover: hover) {
+  .cat-row:hover .name, .op:hover .t1 { color: var(--accent); }
+  .nav button:hover, .periods button:hover { color: var(--fg); }
+  .add:hover, .save:hover { filter: brightness(1.06); }
+}
+@media (min-width: 960px) {
+  body { padding-inline: 0; }
+  .app { max-width: none; }
+  #app { margin: 0 auto; max-width: 1180px; padding: 28px 48px 56px; gap: 18px; }
+  .top .menu-btn, .top .top-add { display: inline-flex; }
+  .top-add { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .top h1 { font-size: 32px; }
+  .periods { margin-inline: 0; padding-inline: 0; flex-wrap: wrap; overflow: visible; }
+
+  .dock { left: 0; right: auto; top: 0; bottom: 0; width: 248px; padding: 28px 18px; pointer-events: auto;
+          display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 22px;
+          background: var(--surface); border-right: 1px solid var(--line); z-index: 6;
+          transform: translateX(-100%); transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s; }
+  .edge { display: block; position: fixed; left: 0; top: 0; bottom: 0; width: 18px; z-index: 5; }
+  .edge::after { content: ""; position: absolute; left: 5px; top: 50%; width: 4px; height: 56px; margin-top: -28px; border-radius: 4px; background: var(--line); transition: background .2s; }
+  .edge:hover::after { background: var(--accent); }
+  .edge:hover + .dock, .dock:hover, .dock:focus-within, .dock.pinned { transform: none; box-shadow: 0 0 80px -10px var(--scrim); }
+  .dock .add { display: none; }
+  .dock::before { content: "Фінанси"; order: -2; font-family: var(--font-display); font-weight: 800; font-size: 24px; padding: 2px 12px; }
+  .nav { order: -1; flex-direction: column; background: transparent; border: 0; box-shadow: none; padding: 0; gap: 4px; }
+  .nav button { display: flex; align-items: center; gap: 12px; padding: 12px 14px; font-size: 15px; border-radius: 14px; }
+  .add { width: 100%; box-shadow: none; padding: 14px; font-size: 15px; }
+
+  .summary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; align-items: end; padding: 24px 28px; }
+  .summary > .label, .summary > .big, .summary > .meta { grid-column: 1; }
+  .summary > .rate, .summary > .review { grid-column: 2; }
+  .summary > .rate { grid-row: 2; }
+  .summary > .review { grid-row: 3; }
+  #cat-list.cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 40px; row-gap: 8px; }
+  .card { padding: 22px 26px; }
+
+  #an-mode .card { grid-template-columns: 320px minmax(0, 1fr); column-gap: 36px; align-items: center; }
+  #an-mode .legend { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+  .donut-wrap svg { width: 300px; }
+
+  #view-reports { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  #view-reports > .chart { grid-column: 1; grid-row: 1 / span 2; }
+  #rep-stats { grid-template-columns: 1fr 1fr; }
+  #view-search { max-width: 780px; }
+
+  .sheet { top: 0; align-items: center; }
+  .sheet-in { width: min(560px, calc(100% - 48px)); border-radius: 26px; max-height: 86vh; padding: 22px 26px 26px; }
+  .grab { display: none; }
+  .toast { bottom: 32px; }
+  .imp-row { grid-template-columns: 24px minmax(0, 1fr) 230px 120px; }
+  .imp-row select { grid-column: auto; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-in { animation: up .22s ease-out; }
+  .bar span, .stack span, .rate-bar span { animation: grow .6s cubic-bezier(.2,.8,.2,1) both; transform-origin: left center; }
+  @keyframes grow { from { transform: scaleX(0); } }
+  .fade-in { animation: fadein .28s ease-out both; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } }
+  @keyframes up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+}
+</style>
+</head>
+<body>
+
+
+<main class="app" id="app">
+  <header class="top">
+    <div class="top-left">
+      <button class="chip-btn icon-btn menu-btn" type="button" id="menu-btn" aria-label="Меню" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <h1 id="title">Фінанси</h1>
+    </div>
+    <div class="top-actions">
+      <button class="chip-btn top-add" type="button" id="top-add">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Додати операцію</button>
+      <button class="chip-btn icon-btn" type="button" id="set-btn" aria-label="Підключення до таблиці">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button class="chip-btn icon-btn" type="button" id="theme-btn" aria-label="Змінити тему">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="sample" id="status" role="status"><b>…</b> Завантаження</div>
+
+  <!-- Головна -->
+  <section id="view-home" class="app" style="padding:0;gap:14px">
+    <nav class="periods" id="periods" aria-label="Період"></nav>
+
+    <article class="card summary" id="summary"></article>
+
+    <div class="seg" role="group" aria-label="Режим">
+      <button type="button" id="mode-list" aria-pressed="true">Список</button>
+      <button type="button" id="mode-an" aria-pressed="false">Аналітика</button>
+    </div>
+
+    <div id="list-mode" class="app" style="padding:0;gap:14px">
+      <article class="card" id="cat-card">
+        <button type="button" class="card-head" id="cat-head" aria-expanded="false" aria-controls="cat-list">
+          <span>За категоріями</span><span class="right"><small id="cat-total" class="num"></small><span class="caret" aria-hidden="true">▾</span></span>
+        </button>
+        <div id="cat-list"></div>
+      </article>
+      <article class="card"><h2>Доходи <small id="inc-total" class="num"></small></h2><div id="inc-list"></div></article>
+      <article class="card"><h2>Операції <small id="ops-count"></small></h2><div class="ops" id="ops-list"></div></article>
+    </div>
+
+    <div id="an-mode" class="app" style="padding:0;gap:14px" hidden>
+      <div class="seg" role="group" aria-label="Тип">
+        <button type="button" id="an-exp" aria-pressed="true">Витрати</button>
+        <button type="button" id="an-inc" aria-pressed="false">Доходи</button>
+      </div>
+      <article class="card">
+        <div class="donut-wrap"><svg id="donut" viewBox="0 0 200 200" role="img" aria-label="Розподіл за категоріями"></svg>
+          <div class="donut-center"><div class="k" id="dc-k">Разом</div><div class="v num" id="dc-v"></div></div></div>
+        <div class="hint">Торкніться сектора або рядка для деталей</div>
+        <div class="legend" id="legend"></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Звіти -->
+  <section id="view-reports" class="app" style="padding:0;gap:14px" hidden>
+    <article class="card chart">
+      <h2>Розходи і доходи <small id="rep-year"></small></h2>
+      <div class="keys"><span><i class="dot" style="background:var(--c2)"></i>Витрати</span><span><i class="dot" style="background:var(--good)"></i>Доходи</span></div>
+      <svg id="rep-chart" viewBox="0 0 340 200" role="img" aria-label="Витрати і доходи по місяцях"></svg>
+    </article>
+    <div class="stats" id="rep-stats"></div>
+    <article class="card"><h2>Найбільші категорії за рік</h2><div id="rep-cats"></div></article>
+  </section>
+
+  <!-- Пошук -->
+  <section id="view-import" class="app" style="padding:0;gap:14px" hidden>
+    <article class="card" id="imp-start">
+      <label class="drop" id="drop" for="imp-file">
+        <input id="imp-file" type="file" accept=".csv,.txt,text/csv">
+        <div class="big-ico" aria-hidden="true">📄</div>
+        <strong>Перетягніть файл виписки сюди або натисніть, щоб вибрати</strong>
+        <span>Формат CSV з інтернет-банку: BNP Paribas, PKO, mBank, Revolut. Категорії підберуться автоматично за словником продавців, сумнівні позначимо для перевірки.</span>
+      </label>
+      <button class="link-btn" type="button" id="imp-sample">Спробувати на прикладі виписки</button>
+      <div class="err" id="imp-err" hidden></div>
+    </article>
+    <article class="card" id="imp-review" hidden>
+      <h2><span id="imp-title">Перевірте операції</span><small id="imp-file-name"></small></h2>
+      <div class="chips" id="imp-stats"></div>
+      <div class="imp-list" id="imp-list"></div>
+      <div class="imp-actions">
+        <button class="save" type="button" id="imp-save">Записати</button>
+        <button class="ghost" type="button" id="imp-cancel">Скасувати</button>
+      </div>
+    </article>
+  </section>
+
+  <section id="view-search" class="app" style="padding:0;gap:14px" hidden>
+    <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Продавець, категорія або сума" autocomplete="off"></label>
+    <article class="card"><h2>Результати <small id="q-count"></small></h2><div class="ops" id="q-list"></div></article>
+  </section>
+</main>
+
+<div class="edge" aria-hidden="true"></div>
+<div class="dock" id="dock">
+  <button class="add" type="button" id="add-btn" aria-label="Додати операцію">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="add-label">Додати операцію</span></button>
+  <nav class="nav" aria-label="Розділи">
+    <button type="button" data-view="home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg>Головна</button>
+    <button type="button" data-view="reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg>Звіти</button>
+    <button type="button" data-view="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Пошук</button>
+    <button type="button" data-view="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3 3 3-3"/></svg>Виписка</button>
+  </nav>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" hidden><div class="sheet-in" id="sheet-in" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+/* ===== Категорії: назва в таблиці → як показуємо ===== */
+const CATS = {
+  'Продукты':             { uk: 'Продукти', emoji: '🛒', color: 'var(--c7)' },
+  'Рестораны и доставка': { uk: 'Ресторани та доставка', emoji: '🍔', color: 'var(--c11)' },
+  'Квартира':             { uk: 'Квартира', emoji: '🏠', color: 'var(--c4)' },
+  'Транспорт':            { uk: 'Транспорт', emoji: '🚗', color: 'var(--c3)' },
+  'Дом':                  { uk: 'Дім', emoji: '🛋️', color: 'var(--c10)' },
+  'Здоровье':             { uk: "Здоров'я", emoji: '💊', color: 'var(--c6)' },
+  'Подписки':             { uk: 'Підписки', emoji: '🔄', color: 'var(--c5)' },
+  'Одежда':               { uk: 'Одяг', emoji: '👕', color: 'var(--c8)' },
+  'Электроника':          { uk: 'Електроніка', emoji: '💻', color: 'var(--c9)' },
+  'Подарки':              { uk: 'Подарунки', emoji: '🎁', color: 'var(--c1)' },
+  'Развлечения':          { uk: 'Розваги', emoji: '🎉', color: 'var(--c2)' },
+  'Прочее':               { uk: 'Інше', emoji: '📦', color: 'var(--c12)' },
+  'Доходы':               { uk: 'Доходи', emoji: '💼', color: 'var(--good)' },
+};
+const catOf = c => CATS[c] || CATS['Прочее'];
+
+/* ===== Дані: Google Таблиця «Учёт расходов vol.1», аркуш «Операции» =====
+   Адреса скрипту і ключ зберігаються лише на цьому пристрої (налаштування ⚙). */
+let TODAY = new Date();
+const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const fromYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const toOp = o => ({ ...o, date: fromYmd(o.date) });
+
+const api = {
+  conf() { return { url: store.get('url', ''), key: store.get('key', '') }; },
+  ready() { const c = this.conf(); return !!(c.url && c.key); },
+  async call(action, body = {}, conf = this.conf()) {
+    if (!conf.url || !conf.key) throw new Error('Застосунок ще не підключено до таблиці');
+    let res;
+    try {
+      res = await fetch(conf.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...body, action, key: conf.key, request_id: Date.now() + '' + Math.floor(Math.random() * 1000) }) });
+    } catch (e) { throw new Error('Немає зв\'язку з таблицею. Перевірте інтернет'); }
+    let data;
+    try { data = await res.json(); } catch (e) { throw new Error('Скрипт відповів не так, як очікувалось. Перевірте адресу'); }
+    if (!data.ok) throw new Error(data.error || 'Невідома помилка');
+    return data;
+  },
+};
+function cacheOps() {
+  try { store.set('ops', JSON.stringify({ at: Date.now(), ops: S.ops.map(o => ({ ...o, date: ymd(o.date) })) })); } catch (e) {}
+}
+function cachedOps() {
+  try { const c = JSON.parse(store.get('ops', '')); return { at: c.at, ops: c.ops.map(toOp) }; } catch (e) { return null; }
+}
+async function loadOperations() {
+  const data = await api.call('list');
+  return data.ops.map(toOp).sort((a, b) => b.date - a.date || b.row - a.row);
+}
+const tFmt = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' });
+function setStatus(kind, text) {
+  const el = $('status');
+  el.classList.toggle('err-line', kind === 'err');
+  const tag = { ok: '✓', err: '!', load: '…', off: '⚙' }[kind];
+  el.innerHTML = `<b>${tag}</b> <span>${esc(text)}</span>` + (kind === 'err' ? ' <button type="button" id="st-retry">Повторити</button>' : kind === 'off' ? ' <button type="button" id="st-set">Підключити</button>' : '');
+  const r = $('st-retry'); if (r) r.onclick = () => refresh(true);
+  const s = $('st-set'); if (s) s.onclick = openSettings;
+}
+let loading = null;
+async function refresh(showSpinner) {
+  if (!api.ready()) { setStatus('off', 'Таблицю не підключено'); return; }
+  if (loading) return loading;
+  if (showSpinner) setStatus('load', 'Оновлюю дані з таблиці…');
+  loading = (async () => {
+    try {
+      S.ops = await loadOperations();
+      cacheOps();
+      TODAY = new Date();
+      render(); if (S.view === 'reports') renderReports();
+      setStatus('ok', 'Оновлено о ' + tFmt.format(new Date()) + ' · ' + plural(S.ops.length, 'операція', 'операції', 'операцій'));
+    } catch (e) {
+      const c = cachedOps();
+      setStatus('err', e.message + (c ? '. Показую збережене о ' + tFmt.format(new Date(c.at)) : ''));
+    } finally { loading = null; }
+  })();
+  return loading;
+}
+function openSettings() {
+  const c = api.conf();
+  openSheet(`<h3><span>Підключення до таблиці</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
+    <div class="hint" style="text-align:left">Адреса і ключ зберігаються лише на цьому пристрої. На iPhone вводьте їх у застосунку з початкового екрана — він не бачить налаштувань із Safari.</div>
+    <label class="field"><span>Адреса веб-застосунку Apps Script</span><input id="s-url" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(c.url)}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <label class="field"><span>Ключ доступу</span><input id="s-key" type="password" placeholder="Ключ із журналу виконання createKey" value="${esc(c.key)}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <div class="err" id="s-err" hidden></div>
+    <button class="save" type="button" id="s-save">Перевірити і зберегти</button>
+    ${c.url || c.key ? '<button class="ghost" type="button" id="s-clear">Відключити цей пристрій</button>' : ''}`);
+  $('s-save').onclick = async () => {
+    const conf = { url: $('s-url').value.trim(), key: $('s-key').value.trim() };
+    const err = $('s-err'); err.hidden = true;
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(conf.url)) { err.textContent = 'Адреса має виглядати так: https://script.google.com/macros/s/…/exec'; err.hidden = false; return; }
+    if (conf.key.length < 20) { err.textContent = 'Вставте ключ повністю.'; err.hidden = false; return; }
+    const btn = $('s-save'); btn.disabled = true; btn.textContent = 'Перевіряю…';
+    try {
+      const r = await api.call('ping', {}, conf);
+      store.set('url', conf.url); store.set('key', conf.key);
+      closeSheet(); toast('Підключено: ' + r.name);
+      refresh(true);
+    } catch (e) { err.textContent = e.message; err.hidden = false; btn.disabled = false; btn.textContent = 'Перевірити і зберегти'; }
+  };
+  const cl = $('s-clear'); if (cl) cl.onclick = () => { ['url', 'key', 'ops'].forEach(k => store.del(k)); S.ops = []; closeSheet(); render(); renderReports(); setStatus('off', 'Таблицю не підключено'); };
+}
+
+/* ===== Стан ===== */
+const isWide = () => matchMedia('(min-width: 960px)').matches;
+const baseShown = () => isWide() ? 14 : 6;
+const S = { ops: [], period: 'month', mode: 'list', anType: 'exp', view: 'home', catOpen: false, opsShown: baseShown(), sel: null };
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('fin.' + k); return v == null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('fin.' + k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem('fin.' + k); } catch (e) {} },
+};
+
+const PERIODS = [
+  ['month', 'Цей місяць'], ['prev', 'Минулий місяць'], ['7d', '7 днів'], ['year', 'Рік'], ['all', 'Усе'],
+];
+function range(p) {
+  const y = TODAY.getFullYear(), m = TODAY.getMonth();
+  const end = new Date(y, m, TODAY.getDate() + 1);
+  if (p === 'month') return [new Date(y, m, 1), end];
+  if (p === 'prev') return [new Date(y, m - 1, 1), new Date(y, m, 1)];
+  if (p === '7d') return [new Date(y, m, TODAY.getDate() - 6), end];
+  if (p === 'year') return [new Date(y, 0, 1), end];
+  return [new Date(2000, 0, 1), end];
+}
+const inPeriod = () => { const [a, b] = range(S.period); return S.ops.filter(o => o.date >= a && o.date < b); };
+
+/* ===== Формат ===== */
+const nf = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = v => nf.format(v) + ' zł';
+const dShort = new Intl.DateTimeFormat('uk-UA', { day: 'numeric', month: 'short' });
+const dDay = new Intl.DateTimeFormat('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const $ = id => document.getElementById(id);
+const plural = (n, one, few, many) => { const a = n % 10, b = n % 100; return n + ' ' + (a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many); };
+
+function totals(list) {
+  let inc = 0, exp = 0;
+  list.forEach(o => { if (o.type === 'Доход') inc += o.amount; else if (o.type === 'Возврат') exp -= o.amount; else exp += o.amount; });
+  return { inc, exp };
+}
+function byCat(list, type) {
+  const map = {};
+  list.forEach(o => {
+    const isInc = o.type === 'Доход';
+    if (type === 'inc' ? !isInc : isInc) return;
+    const key = type === 'inc' ? (o.sub || 'Інше') : o.cat;
+    map[key] = (map[key] || 0) + (o.type === 'Возврат' ? -o.amount : o.amount);
+  });
+  return Object.entries(map).filter(([, v]) => v > 0.004).sort((a, b) => b[1] - a[1]);
+}
+
+/* ===== Рендер ===== */
+function renderPeriods() {
+  $('periods').innerHTML = PERIODS.map(([k, t]) => `<button type="button" data-p="${k}" aria-pressed="${S.period === k}">${t}</button>`).join('');
+}
+function renderSummary(list) {
+  const { inc, exp } = totals(list);
+  const left = inc - exp;
+  const rate = inc > 0 ? Math.max(0, Math.round(left / inc * 100)) : null;
+  const toCheck = S.ops.filter(o => o.check).length;
+  $('summary').innerHTML = `
+    <div class="label">${inc > 0 ? 'Залишилось з доходу' : 'Витрачено'}</div>
+    <div class="big num ${left < 0 && inc > 0 ? 'neg' : ''}">${money(inc > 0 ? left : exp)}</div>
+    <div class="meta num"><span>Заробив ${money(inc)} · Витратив ${money(exp)}</span></div>
+    ${rate !== null ? `<div class="rate"><div class="meta">Норма заощаджень ${rate}%</div><div class="rate-bar"><span style="width:${Math.min(rate, 100)}%"></span></div></div>` : ''}
+    ${toCheck ? `<button class="review" type="button" id="review-btn"><span>⚠ ${plural(toCheck, 'операція', 'операції', 'операцій')} на перевірку</span><span class="chev">›</span></button>` : ''}`;
+  const rb = $('review-btn');
+  if (rb) rb.onclick = openReview;
+}
+function catRowHtml(name, val, max, i, extraHead = '', key) {
+  const c = catOf(name);
+  const label = CATS[name] ? c.uk : name;
+  return `<button type="button" class="cat-row" data-cat="${esc(key ?? name)}">
+    <div class="head">${extraHead}<span class="emo">${CATS[name] ? c.emoji : '💼'}</span><span class="name">${esc(label)}</span><span class="sum num">${money(val)}</span><span class="chev">›</span></div>
+    <div class="bar"><span style="width:${(val / max * 100).toFixed(1)}%;background:${CATS[name] ? c.color : 'var(--good)'}"></span></div></button>`;
+}
+function opHtml(o) {
+  const c = catOf(o.cat);
+  const sign = o.type === 'Доход' || o.type === 'Возврат' ? '+' : '';
+  return `<div class="op"><div class="tile" style="background:color-mix(in srgb, ${c.color} 22%, var(--surface-2))">${c.emoji}</div>
+    <div class="txt"><div class="t1">${esc(o.desc)}</div><div class="t2"><span>${dShort.format(o.date)} · ${esc(o.type === 'Доход' ? (o.sub || 'Дохід') : c.uk)}</span>${o.check ? '<span class="flag">перевірити</span>' : ''}${o.type === 'Возврат' ? '<span class="flag">повернення</span>' : ''}</div></div>
+    <div class="amt num ${sign ? 'in' : ''}">${sign}${money(o.amount)}</div></div>`;
+}
+function opsGrouped(list) {
+  if (!list.length) return '<div class="empty">Немає операцій за цей період</div>';
+  let out = '', last = '';
+  list.forEach(o => { const k = o.date.toDateString(); if (k !== last) { out += `<div class="day">${dDay.format(o.date)}</div>`; last = k; } out += opHtml(o); });
+  return out;
+}
+function renderList(list) {
+  const cats = byCat(list, 'exp');
+  const max = cats.length ? cats[0][1] : 1;
+  const wide = isWide();
+  const total = cats.reduce((s, [, v]) => s + v, 0);
+  const color = n => catOf(n).color;
+  $('cat-total').textContent = money(total);
+  $('cat-head').setAttribute('aria-expanded', String(S.catOpen));
+  $('cat-list').classList.toggle('cols', matchMedia('(min-width: 640px)').matches && S.catOpen);
+  $('cat-list').innerHTML = !cats.length ? '<div class="empty">Витрат немає</div>'
+    : !S.catOpen
+    ? `<div class="stack">${cats.map(([n, v]) => `<span style="flex:${v.toFixed(2)};background:${color(n)}" title="${esc(catOf(n).uk)} · ${money(v)}"></span>`).join('')}</div>
+       <div class="chips">${cats.slice(0, 6).map(([n, v]) => `<button type="button" class="chip" data-cat="${esc(n)}"><i class="dot" style="background:${color(n)}"></i>${catOf(n).emoji} ${esc(catOf(n).uk)} <b class="num">${Math.round(v / total * 100)}%</b></button>`).join('')}${cats.length > 6 ? `<button type="button" class="chip" id="cat-more">+${cats.length - 6} ще</button>` : ''}</div>`
+    : cats.map(([n, v], i) => catRowHtml(n, v, max, i)).join('') + (cats.length > 4 ? '<button class="more" type="button" id="cat-more" style="grid-column:1/-1">Згорнути ▲</button>' : '');
+  const inc = byCat(list, 'inc');
+  $('inc-total').textContent = money(inc.reduce((s, [, v]) => s + v, 0));
+  $('inc-list').innerHTML = inc.length ? inc.map(([n, v]) => catRowHtml(n, v, inc[0][1], 0, '', 'inc:' + n)).join('') : '<div class="empty">Доходів за цей період немає</div>';
+  $('ops-count').textContent = plural(list.length, 'операція', 'операції', 'операцій');
+  const vis = list.slice(0, S.opsShown);
+  $('ops-list').innerHTML = opsGrouped(vis) + (list.length > S.opsShown ? `<button class="more" type="button" id="ops-more">Показати ще ${Math.min(10, list.length - S.opsShown)} ▼</button>` : '');
+  const cm = $('cat-more'); if (cm) cm.onclick = toggleCats;
+  const om = $('ops-more'); if (om) om.onclick = () => { S.opsShown += 10; render(); };
+}
+function renderDonut(list, anim) {
+  const data = byCat(list, S.anType);
+  const total = data.reduce((s, [, v]) => s + v, 0);
+  const R = 78, C = 2 * Math.PI * R, gap = data.length > 1 ? 2.2 : 0;
+  const segs = [];
+  let acc = 0;
+  $('donut').innerHTML = `<circle cx="100" cy="100" r="${R}" fill="none" stroke="var(--surface-2)" stroke-width="26"/>` + data.map(([n, v], i) => {
+    const len = v / total * C, start = acc; acc += len; segs.push([start, Math.max(len - gap, 0.6)]);
+    return `<circle class="seg-sector" data-i="${i}" cx="100" cy="100" r="${R}" fill="none" stroke="${donutColor(n)}" stroke-width="26"
+      stroke-dasharray="${segs[i][1]} ${C}" stroke-dashoffset="${-start}" transform="rotate(-90 100 100)"><title>${esc(donutLabel(n))}</title></circle>`;
+  }).join('');
+  S.donut = { data, total };
+  $('legend').innerHTML = data.length ? data.map(([n, v], i) => `<button type="button" class="cat-row" data-i="${i}">
+      <div class="head"><i class="dot" style="background:${donutColor(n)}"></i><span class="emo">${CATS[n] ? catOf(n).emoji : '💼'}</span><span class="name">${esc(donutLabel(n))}</span><span class="pct num">${Math.round(v / total * 100)}%</span><span class="sum num">${money(v)}</span></div>
+      <div class="bar"><span style="width:${(v / data[0][1] * 100).toFixed(1)}%;background:${donutColor(n)}"></span></div></button>`).join('')
+    : `<div class="empty">${S.anType === 'inc' ? 'Доходів' : 'Витрат'} за цей період немає</div>`;
+  document.querySelectorAll('#donut .seg-sector, #legend .cat-row').forEach(el => el.onclick = () => { const i = +el.dataset.i; selectSector(S.sel === i ? null : i); });
+  if (S.sel !== null && S.sel >= data.length) S.sel = null;
+  selectSector(S.sel);
+  if (anim && data.length && !reduceMotion()) {
+    const D = 850;
+    $('donut').querySelectorAll('.seg-sector').forEach((c, i) => {
+      const [start, full] = segs[i];
+      c.animate([{ strokeDasharray: `0 ${C}` }, { strokeDasharray: `${full} ${C}` }],
+        { duration: Math.max(full / C * D, 70), delay: start / C * D, easing: 'linear', fill: 'backwards' });
+    });
+    $('donut').animate([{ transform: 'rotate(-25deg) scale(.94)', opacity: .4 }, { transform: 'none', opacity: 1 }], { duration: D, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    if (S.sel === null) countUp($('dc-v'), total, D);
+    stagger($('legend'), '.cat-row', 55);
+  }
+}
+const donutColor = n => CATS[n] ? catOf(n).color : 'var(--good)';
+const donutLabel = n => CATS[n] ? catOf(n).uk : n;
+function selectSector(i) {
+  S.sel = i;
+  const d = S.donut || { data: [], total: 0 };
+  $('donut').querySelectorAll('.seg-sector').forEach(c => { const k = +c.dataset.i; c.style.opacity = i === null || k === i ? 1 : .28; c.style.strokeWidth = k === i ? 33 : 26; });
+  $('legend').querySelectorAll('.cat-row').forEach(r => { r.style.opacity = i === null || +r.dataset.i === i ? 1 : .45; r.style.transition = 'opacity .25s'; });
+  const s = i !== null && d.data[i];
+  $('dc-k').textContent = s ? donutLabel(s[0]) : 'Разом';
+  $('dc-v').textContent = money(s ? s[1] : d.total);
+}
+function countUp(el, to, ms) {
+  const t0 = performance.now();
+  const step = t => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = money(to * e); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function stagger(root, sel, every = 35) {
+  if (!root || reduceMotion()) return;
+  root.querySelectorAll(sel).forEach((r, i) => r.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
+    { duration: 380, delay: Math.min(i, 16) * every, fill: 'backwards', easing: 'cubic-bezier(.2,.8,.2,1)' }));
+}
+
+/* ===== Перевірка операцій ===== */
+function openReview() {
+  const items = S.ops.filter(o => o.check);
+  openSheet(`<h3><span>На перевірку · <span id="rv-n" class="num">${items.length}</span></span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
+    <div class="hint" style="text-align:left">Ці операції система не змогла впевнено розподілити. Оберіть категорію або підтвердьте як є — позначка зникне і в таблиці.</div>
+    <div id="rv-list">${items.map(o => `<div class="rv-item" data-id="${o.id}">${opHtml(o)}
+      <div class="rv-actions"><select id="rv-cat-${o.id}" aria-label="Категорія">${catOptions(o.cat)}</select><button type="button" class="chip rv-ok">✓ Вірно</button></div></div>`).join('')}</div>`);
+  stagger($('rv-list'), '.rv-item', 50);
+  $('rv-list').querySelectorAll('.rv-item').forEach(item => {
+    const o = S.ops.find(x => x.id === item.dataset.id);
+    const done = async (patch = {}) => {
+      item.querySelectorAll('select, button').forEach(x => x.disabled = true);
+      const next = { cat: o.cat, sub: o.sub, type: o.type, ...patch };
+      try { await api.call('update', { id: o.id, row: o.row, ...next }); }
+      catch (e) { toast(e.message); item.querySelectorAll('select, button').forEach(x => x.disabled = false); return; }
+      Object.assign(o, next); o.check = false; cacheOps();
+      const finish = () => {
+        item.remove();
+        const left = S.ops.filter(x => x.check).length;
+        $('rv-n').textContent = left;
+        if (!left) $('rv-list').innerHTML = '<div class="rv-done fade-in"><b>✅ Усе перевірено</b><span class="hint">Нових операцій на перевірку немає</span></div>';
+        render();
+      };
+      if (reduceMotion()) return finish();
+      item.animate([{ height: item.offsetHeight + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 280, easing: 'ease-in' }).onfinish = finish;
+    };
+    item.querySelector('select').onchange = e => { const cat = e.target.value; done({ cat, sub: '', type: cat === 'Доходы' ? 'Доход' : o.type === 'Доход' ? 'Расход' : o.type }); };
+    item.querySelector('.rv-ok').onclick = () => done();
+  });
+}
+
+function renderReports() {
+  const y = TODAY.getFullYear();
+  $('rep-year').textContent = y + ' рік';
+  const months = Array.from({ length: 12 }, (_, m) => totals(S.ops.filter(o => o.date.getFullYear() === y && o.date.getMonth() === m)));
+  const max = Math.max(1, ...months.flatMap(t => [t.inc, t.exp]));
+  const nice = Math.ceil(max / 1000) * 1000;
+  const W = 340, H = 200, L = 34, B = 22, T = 8, cw = (W - L - 4) / 12, bw = cw * 0.32;
+  const yy = v => T + (H - T - B) * (1 - v / nice);
+  const names = ['січ', 'лют', 'бер', 'кві', 'тра', 'чер', 'лип', 'сер', 'вер', 'жов', 'лис', 'гру'];
+  let g = '';
+  for (let k = 0; k <= 4; k++) { const v = nice * k / 4, py = yy(v); g += `<line x1="${L}" x2="${W - 2}" y1="${py}" y2="${py}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${py + 3}" text-anchor="end" font-size="9" fill="var(--muted)">${v >= 1000 ? (v / 1000).toLocaleString('uk-UA') + 'k' : v}</text>`; }
+  months.forEach((t, m) => {
+    const x = L + m * cw + cw / 2;
+    if (t.exp > 0) g += `<rect x="${x - bw - 1}" y="${yy(t.exp)}" width="${bw}" height="${yy(0) - yy(t.exp)}" rx="2" fill="var(--c2)"><title>${names[m]}: витрати ${money(t.exp)}</title></rect>`;
+    if (t.inc > 0) g += `<rect x="${x + 1}" y="${yy(t.inc)}" width="${bw}" height="${yy(0) - yy(t.inc)}" rx="2" fill="var(--good)"><title>${names[m]}: доходи ${money(t.inc)}</title></rect>`;
+    g += `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="9" fill="${m === TODAY.getMonth() ? 'var(--fg)' : 'var(--muted)'}">${names[m]}</text>`;
+  });
+  $('rep-chart').innerHTML = g;
+  const full = months.filter((t, m) => m < TODAY.getMonth() && (t.exp > 0));
+  const yt = totals(S.ops.filter(o => o.date.getFullYear() === y));
+  const avg = full.length ? full.reduce((s, t) => s + t.exp, 0) / full.length : 0;
+  $('rep-stats').innerHTML = [
+    ['Витрати за рік', money(yt.exp)], ['Доходи за рік', money(yt.inc)],
+    ['Середньо на місяць', full.length ? money(avg) : '—'], ['Заощаджено', money(yt.inc - yt.exp)],
+  ].map(([k, v]) => `<div class="stat"><span class="k">${k}</span><span class="v num">${v}</span></div>`).join('');
+  const cats = byCat(S.ops.filter(o => o.date.getFullYear() === y), 'exp').slice(0, 6);
+  $('rep-cats').innerHTML = cats.map(([n, v], i) => catRowHtml(n, v, cats[0][1], i)).join('') || '<div class="empty">Даних ще немає</div>';
+}
+function renderSearch() {
+  const q = $('q').value.trim().toLowerCase();
+  const res = q ? S.ops.filter(o => (o.desc + ' ' + catOf(o.cat).uk + ' ' + o.cat + ' ' + nf.format(o.amount)).toLowerCase().includes(q)) : S.ops.slice(0, 8);
+  $('q-count').textContent = q ? plural(res.length, 'збіг', 'збіги', 'збігів') : 'останні';
+  $('q-list').innerHTML = res.length ? res.slice(0, 60).map(opHtml).join('') : '<div class="empty">Нічого не знайдено. Спробуйте назву магазину або суму.</div>';
+}
+function render() {
+  const list = inPeriod();
+  renderPeriods(); renderSummary(list);
+  $('list-mode').hidden = S.mode !== 'list'; $('an-mode').hidden = S.mode !== 'an';
+  $('mode-list').setAttribute('aria-pressed', S.mode === 'list'); $('mode-an').setAttribute('aria-pressed', S.mode === 'an');
+  $('an-exp').setAttribute('aria-pressed', S.anType === 'exp'); $('an-inc').setAttribute('aria-pressed', S.anType === 'inc');
+  if (S.mode === 'list') renderList(list); else renderDonut(list, S.anim);
+  S.anim = false;
+  bindCatRows();
+}
+function bindCatRows() {
+  document.querySelectorAll('#cat-list [data-cat], #inc-list [data-cat], #rep-cats [data-cat]').forEach(el => el.onclick = () => {
+    const key = el.dataset.cat;
+    const base = el.closest('#rep-cats') ? S.ops.filter(o => o.date.getFullYear() === TODAY.getFullYear()) : inPeriod();
+    if (key.startsWith('inc:')) { const n = key.slice(4); openList(n, base.filter(o => o.type === 'Доход' && (o.sub || 'Інше') === n)); }
+    else openList(catOf(key).emoji + ' ' + catOf(key).uk, base.filter(o => o.type !== 'Доход' && o.cat === key));
+  });
+}
+
+/* ===== Шторки ===== */
+function openSheet(html) { $('sheet-in').innerHTML = '<div class="grab"></div>' + html; $('scrim').hidden = false; $('sheet').hidden = false; const x = $('sheet-in').querySelector('.x'); if (x) x.onclick = closeSheet; }
+function closeSheet() { $('scrim').hidden = true; $('sheet').hidden = true; }
+$('scrim').onclick = closeSheet;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+function openList(title, list) {
+  const sum = list.reduce((s, o) => s + (o.type === 'Возврат' ? -o.amount : o.amount), 0);
+  openSheet(`<h3><span>${esc(title)} · ${list.length}</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
+    <div class="meta num" style="color:var(--muted)">Разом · ${money(sum)}</div><div class="ops">${opsGrouped(list)}</div>`);
+}
+
+let form = { type: 'Расход', cat: null };
+function openAdd() {
+  form = { type: 'Расход', cat: null };
+  const today = ymd(new Date());
+  openSheet(`<h3><span>Нова операція</span><button class="x" type="button" aria-label="Закрити">✕</button></h3>
+    <div class="seg" role="group" aria-label="Тип"><button type="button" id="t-exp" aria-pressed="true">Витрата</button><button type="button" id="t-inc" aria-pressed="false">Дохід</button></div>
+    <label class="field"><span>Сума, zł</span><input id="f-amount" inputmode="decimal" placeholder="0,00" autocomplete="off"></label>
+    <div class="field" id="cat-field"><span>Категорія</span><div class="cats" id="f-cats"></div></div>
+    <label class="field"><span>Опис</span><input id="f-desc" placeholder="Наприклад, Biedronka" autocomplete="off"></label>
+    <label class="field"><span>Дата</span><input id="f-date" type="date" value="${today}"></label>
+    <div class="err" id="f-err" hidden></div>
+    <button class="save" type="button" id="f-save">Зберегти</button>`);
+  const drawCats = () => {
+    $('f-cats').innerHTML = Object.entries(CATS).filter(([k]) => k !== 'Доходы').map(([k, c]) => `<button type="button" data-k="${k}" aria-pressed="${form.cat === k}"><span>${c.emoji}</span>${c.uk}</button>`).join('');
+    $('f-cats').querySelectorAll('button').forEach(b => b.onclick = () => { form.cat = b.dataset.k; drawCats(); });
+  };
+  drawCats();
+  const setType = t => { form.type = t; $('t-exp').setAttribute('aria-pressed', t === 'Расход'); $('t-inc').setAttribute('aria-pressed', t === 'Доход'); $('cat-field').hidden = t === 'Доход'; };
+  $('t-exp').onclick = () => setType('Расход'); $('t-inc').onclick = () => setType('Доход');
+  $('f-amount').focus();
+  $('f-save').onclick = async () => {
+    const amount = parseFloat($('f-amount').value.replace(/\s/g, '').replace(',', '.'));
+    const err = $('f-err');
+    if (!(amount > 0)) { err.textContent = 'Введіть суму більшу за нуль, наприклад 24,90.'; err.hidden = false; return; }
+    if (form.type === 'Расход' && !form.cat) { err.textContent = 'Оберіть категорію.'; err.hidden = false; return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test($('f-date').value)) { err.textContent = 'Оберіть дату.'; err.hidden = false; return; }
+    if (!api.ready()) { err.textContent = 'Спершу підключіть таблицю (⚙ угорі).'; err.hidden = false; return; }
+    const cat = form.type === 'Доход' ? 'Доходы' : form.cat;
+    const op = { date: $('f-date').value, type: form.type, cat, sub: form.type === 'Доход' ? 'Інше' : '', desc: $('f-desc').value.trim() || catOf(cat).uk, amount: Math.round(amount * 100) / 100 };
+    const btn = $('f-save'); btn.disabled = true; btn.textContent = 'Зберігаю…'; err.hidden = true;
+    try {
+      const r = await api.call('add', { op });
+      S.ops.unshift(toOp(r.op)); S.ops.sort((a, b) => b.date - a.date); cacheOps();
+      closeSheet(); render(); renderReports();
+      toast('Записано в таблицю');
+    } catch (e) { err.textContent = e.message; err.hidden = false; btn.disabled = false; btn.textContent = 'Зберегти'; }
+  };
+}
+function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3200); }
+
+/* ===== Події ===== */
+$('periods').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.period = b.dataset.p; S.sel = null; S.opsShown = baseShown(); store.set('period', S.period); S.anim = true; render(); if (S.mode === 'list') stagger($('list-mode'), '.cat-row, .chip, .day, .op'); };
+$('mode-list').onclick = () => { if (S.mode === 'list') return; S.mode = 'list'; store.set('mode', 'list'); render(); stagger($('list-mode'), '.card, .cat-row, .chip, .day, .op', 30); };
+$('mode-an').onclick = () => { if (S.mode === 'an') return; S.mode = 'an'; S.sel = null; S.anim = true; store.set('mode', 'an'); render(); pop($('an-mode')); };
+$('an-exp').onclick = () => { if (S.anType === 'exp') return; S.anType = 'exp'; S.sel = null; S.anim = true; render(); };
+$('an-inc').onclick = () => { if (S.anType === 'inc') return; S.anType = 'inc'; S.sel = null; S.anim = true; render(); };
+$('add-btn').onclick = openAdd;
+$('cat-head').onclick = toggleCats;
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function toggleCats() {
+  const el = $('cat-list');
+  const h0 = el.offsetHeight;
+  S.catOpen = !S.catOpen;
+  render();
+  if (reduceMotion()) return;
+  const h1 = el.offsetHeight;
+  el.style.overflow = 'hidden';
+  el.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 360, easing: 'cubic-bezier(.2,.8,.2,1)' })
+    .onfinish = () => { el.style.overflow = ''; };
+  el.querySelectorAll('.cat-row, .chip, .stack').forEach((r, i) =>
+    r.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 280, delay: Math.min(i, 12) * 28, fill: 'backwards', easing: 'ease-out' }));
+}
+function pop(el) { if (reduceMotion() || !el) return; el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in'); }
+$('q').oninput = renderSearch;
+const VIEWS = { home: 'Фінанси', reports: 'Звіти', search: 'Пошук', import: 'Імпорт виписки' };
+function go(view) {
+  S.view = view;
+  document.querySelectorAll('.nav button').forEach(x => x.dataset.view === view ? x.setAttribute('aria-current', 'page') : x.removeAttribute('aria-current'));
+  Object.keys(VIEWS).forEach(v => $('view-' + v).hidden = v !== view);
+  $('title').textContent = VIEWS[view];
+  if (view === 'reports') { renderReports(); bindCatRows(); }
+  if (view === 'search') { renderSearch(); $('q').focus(); }
+  pop($('view-' + view));
+  $('dock').classList.remove('pinned'); $('menu-btn').setAttribute('aria-expanded', 'false');
+  document.activeElement && document.activeElement.closest && document.activeElement.closest('.dock') && document.activeElement.blur();
+  window.scrollTo({ top: 0 });
+}
+document.querySelectorAll('.nav button').forEach(b => b.onclick = () => go(b.dataset.view));
+$('top-add').onclick = openAdd;
+$('menu-btn').onclick = () => { const on = $('dock').classList.toggle('pinned'); $('menu-btn').setAttribute('aria-expanded', String(on)); };
+document.addEventListener('click', e => { if ($('dock').classList.contains('pinned') && !e.target.closest('.dock, #menu-btn')) { $('dock').classList.remove('pinned'); $('menu-btn').setAttribute('aria-expanded', 'false'); } });
+$('theme-btn').onclick = () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : !matchMedia('(prefers-color-scheme: light)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+  store.set('theme', root.dataset.theme);
+};
+
+/* ===== Імпорт виписки =====
+   Розбір CSV у браузері + словник продавців (той самий, що в Apps Script). */
+const DICT = [
+  ['biedronka', 'Biedronka', 'Продукты', 'Магазины', false],
+  ['jeronimo martins', 'Biedronka', 'Продукты', 'Магазины', false],
+  ['zabka', 'Zabka', 'Продукты', 'Магазины', false],
+  ['lidl', 'Lidl', 'Продукты', 'Магазины', false],
+  ['aldi', 'Aldi', 'Продукты', 'Магазины', false],
+  ['kaufland', 'Kaufland', 'Продукты', 'Магазины', false],
+  ['carrefour', 'Carrefour', 'Продукты', 'Магазины', false],
+  ['auchan', 'Auchan', 'Продукты', 'Магазины', false],
+  ['netto', 'Netto', 'Продукты', 'Магазины', false],
+  ['dino', 'Dino', 'Продукты', 'Магазины', false],
+  ['lewiatan', 'Lewiatan', 'Продукты', 'Магазины', false],
+  ['stokrotka', 'Stokrotka', 'Продукты', 'Магазины', false],
+  ['polomarket', 'POLOmarket', 'Продукты', 'Магазины', false],
+  ['freshmarket', 'Freshmarket', 'Продукты', 'Магазины', false],
+  ['intermarche', 'Intermarche', 'Продукты', 'Магазины', false],
+  ['spolem', 'Społem', 'Продукты', 'Магазины', false],
+  ['piekarnia', 'Пекарня', 'Продукты', 'Пекарня', false],
+  ['mcdonald', "McDonald's", 'Рестораны и доставка', 'Кафе / рестораны', false],
+  ['kfc', 'KFC', 'Рестораны и доставка', 'Кафе / рестораны', false],
+  ['burger king', 'Burger King', 'Рестораны и доставка', 'Кафе / рестораны', false],
+  ['pizza hut', 'Pizza Hut', 'Рестораны и доставка', 'Кафе / рестораны', false],
+  ['subway', 'Subway', 'Рестораны и доставка', 'Кафе / рестораны', false],
+  ['starbucks', 'Starbucks', 'Рестораны и доставка', 'Кафе / рестораны', false],
+  ['costa coffee', 'Costa Coffee', 'Рестораны и доставка', 'Кафе / рестораны', false],
+  ['north fish', 'North Fish', 'Рестораны и доставка', 'Кафе / рестораны', false],
+  ['glovo', 'Glovo', 'Рестораны и доставка', 'Доставка еды', false],
+  ['wolt', 'Wolt', 'Рестораны и доставка', 'Доставка еды', false],
+  ['pyszne', 'Pyszne.pl', 'Рестораны и доставка', 'Доставка еды', false],
+  ['uber eats', 'Uber Eats', 'Рестораны и доставка', 'Доставка еды', false],
+  ['bolt food', 'Bolt Food', 'Рестораны и доставка', 'Доставка еды', false],
+  ['uber', 'Uber', 'Транспорт', 'Такси', false],
+  ['bolt', 'Bolt', 'Транспорт', 'Такси', false],
+  ['freenow', 'FreeNow', 'Транспорт', 'Такси', false],
+  ['free now', 'FreeNow', 'Транспорт', 'Такси', false],
+  ['traficar', 'Traficar', 'Транспорт', 'Carsharing', false],
+  ['panek', 'Panek', 'Транспорт', 'Carsharing', false],
+  ['jakdojade', 'Jakdojade', 'Транспорт', 'Общественный транспорт', false],
+  ['ztm', 'ZTM', 'Транспорт', 'Общественный транспорт', false],
+  ['koleje mazowieckie', 'Koleje Mazowieckie', 'Транспорт', 'Общественный транспорт', false],
+  ['intercity', 'PKP Intercity', 'Транспорт', 'Общественный транспорт', false],
+  ['pkp', 'PKP', 'Транспорт', 'Общественный транспорт', false],
+  ['orlen', 'Orlen', 'Транспорт', 'Автомобиль', false],
+  ['circle k', 'Circle K', 'Транспорт', 'Автомобиль', false],
+  ['shell', 'Shell', 'Транспорт', 'Автомобиль', false],
+  ['moya', 'Moya', 'Транспорт', 'Автомобиль', false],
+  ['jysk', 'JYSK', 'Дом', 'Другое', false],
+  ['ikea', 'IKEA', 'Дом', 'Другое', false],
+  ['leroy merlin', 'Leroy Merlin', 'Дом', 'Другое', false],
+  ['castorama', 'Castorama', 'Дом', 'Другое', false],
+  ['pepco', 'Pepco', 'Дом', 'Другое', true],
+  ['rossmann', 'Rossmann', 'Дом', 'Бытовая химия', true],
+  ['hebe', 'Hebe', 'Дом', 'Бытовая химия', true],
+  ['dealz', 'Dealz', 'Прочее', 'Магазин', true],
+  ['apteka', 'Аптека', 'Здоровье', 'Аптека', false],
+  ['super-pharm', 'Super-Pharm', 'Здоровье', 'Аптека', false],
+  ['luxmed', 'Lux Med', 'Здоровье', 'Врачи', false],
+  ['medicover', 'Medicover', 'Здоровье', 'Врачи', false],
+  ['diagnostyka', 'Diagnostyka', 'Здоровье', 'Анализы', false],
+  ['alab', 'ALAB', 'Здоровье', 'Анализы', false],
+  ['netflix', 'Netflix', 'Подписки', 'Netflix', false],
+  ['spotify', 'Spotify', 'Подписки', 'Spotify', false],
+  ['youtube', 'YouTube', 'Подписки', 'YouTube', false],
+  ['chatgpt', 'ChatGPT', 'Подписки', 'AI', false],
+  ['openai', 'ChatGPT', 'Подписки', 'AI', false],
+  ['anthropic', 'Claude', 'Подписки', 'AI', false],
+  ['apple.com', 'Apple', 'Подписки', 'Apple', false],
+  ['itunes', 'Apple', 'Подписки', 'Apple', false],
+  ['nvidia', 'GeForce NOW', 'Подписки', 'Другие', false],
+  ['media markt', 'Media Markt', 'Электроника', '', false],
+  ['media expert', 'Media Expert', 'Электроника', '', false],
+  ['euro agd', 'RTV Euro AGD', 'Электроника', '', false],
+  ['x-kom', 'x-kom', 'Электроника', '', false],
+  ['morele', 'Morele', 'Электроника', '', false],
+  ['zara', 'Zara', 'Одежда', '', false],
+  ['h&m', 'H&M', 'Одежда', '', false],
+  ['reserved', 'Reserved', 'Одежда', '', false],
+  ['sinsay', 'Sinsay', 'Одежда', '', false],
+  ['cropp', 'Cropp', 'Одежда', '', false],
+  ['ccc', 'CCC', 'Одежда', '', false],
+  ['deichmann', 'Deichmann', 'Одежда', '', false],
+  ['primark', 'Primark', 'Одежда', '', false],
+  ['tk maxx', 'TK Maxx', 'Одежда', '', true],
+  ['decathlon', 'Decathlon', 'Одежда', '', true],
+  ['zalando', 'Zalando', 'Одежда', '', true],
+  ['cinema city', 'Cinema City', 'Развлечения', '', false],
+  ['multikino', 'Multikino', 'Развлечения', '', false],
+  ['helios', 'Helios', 'Развлечения', '', false],
+  ['steam', 'Steam', 'Развлечения', '', false],
+  ['playstation', 'PlayStation', 'Развлечения', '', false],
+  ['empik', 'Empik', 'Развлечения', '', true],
+  ['allegro', 'Allegro', 'Прочее', '', true],
+  ['amazon', 'Amazon', 'Прочее', '', true],
+  ['aliexpress', 'AliExpress', 'Прочее', '', true],
+  ['temu', 'Temu', 'Прочее', '', true],
+  ['shein', 'Shein', 'Одежда', '', true],
+  ['vinted', 'Vinted', 'Прочее', '', true],
+  ['olx', 'OLX', 'Прочее', '', true],
+];
+const normTxt = s => String(s || '').toLowerCase().replace(/ł/g, 'l').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+function matchMerchant(text) {
+  const t = ' ' + normTxt(text) + ' ';
+  let best = null;
+  DICT.forEach(([key, name, cat, sub, check]) => {
+    const k = normTxt(key);
+    for (let i = t.indexOf(k); i > -1; i = t.indexOf(k, i + 1)) {
+      if (!/[a-z0-9]/.test(t[i - 1] || ' ') && !/[a-z0-9]/.test(t[i + k.length] || ' ')) {
+        if (!best || i < best.i || (i === best.i && k.length > best.len)) best = { i, len: k.length, name, cat, sub, check };
+        break;
+      }
+    }
+  });
+  return best;
+}
+function csvRows(text) {
+  text = text.replace(/^﻿/, '');
+  const head = text.split(/\r?\n/).slice(0, 20).join('\n');
+  const delim = [';', '\t', ','].map(d => [d, head.split(d).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === delim) { row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows.map(r => r.map(x => x.trim())).filter(r => r.some(Boolean));
+}
+const reDate = /^(\d{4})-(\d{2})-(\d{2})|^(\d{2})[.\/-](\d{2})[.\/-](\d{4})/;
+function toDate(v) {
+  const m = String(v).match(reDate); if (!m) return null;
+  const d = m[1] ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(+m[6], +m[5] - 1, +m[4]);
+  return isNaN(d) ? null : d;
+}
+function toAmount(v) {
+  let s = String(v || '').replace(/[\s ]/g, '').replace('−', '-');
+  if (!/\d/.test(s) || /[a-zа-я]{3,}/i.test(s.replace(/pln|zł|zl|eur|usd/gi, ''))) return null;
+  const neg = /^-|-$|^\(/.test(s);
+  s = s.replace(/[^\d.,]/g, '');
+  const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+  if (lc > -1 && ld > -1) s = lc > ld ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  else if (lc > -1) s = s.replace(',', '.');
+  const n = parseFloat(s);
+  return isFinite(n) ? (neg ? -n : n) : null;
+}
+function parseStatement(text) {
+  const rows = csvRows(text);
+  const isH = (c, re) => re.test(normTxt(c));
+  let hi = -1, col = {};
+  for (let r = 0; r < Math.min(rows.length, 40); r++) {
+    const cells = rows[r];
+    const f = re => cells.findIndex(c => isH(c, re));
+    const date = f(/^(data|date|дата)/), amount = f(/^(kwota|amount|сума|suma)/), debit = f(/obciazen|wydatk|debit/), credit = f(/uznan|wplyw|credit/);
+    if (date > -1 && (amount > -1 || debit > -1)) {
+      const desc = cells.map((c, i) => isH(c, /opis|tytul|description|kontrahent|odbiorca|nadawca|nazwa|szczegol|merchant|details|назва|опис/) ? i : -1).filter(i => i > -1);
+      hi = r; col = { date, amount, debit, credit, desc }; break;
+    }
+  }
+  const out = [];
+  rows.slice(hi + 1).forEach(cells => {
+    let date, amount, desc;
+    if (hi > -1) {
+      date = toDate(cells[col.date]);
+      amount = col.amount > -1 ? toAmount(cells[col.amount]) : (() => { const d = toAmount(cells[col.debit]), c = toAmount(cells[col.credit]); return d ? -Math.abs(d) : c; })();
+      desc = (col.desc.length ? col.desc.map(i => cells[i]) : cells.filter((c, i) => i !== col.date && i !== col.amount)).filter(Boolean).join(' · ');
+    } else {
+      const di = cells.findIndex(c => toDate(c));
+      const ai = cells.findIndex((c, i) => i !== di && /^[-−]?\s?[\d\s]+[.,]\d{2}\s*(pln|zł)?$/i.test(c));
+      date = di > -1 ? toDate(cells[di]) : null; amount = ai > -1 ? toAmount(cells[ai]) : null;
+      desc = cells.filter((c, i) => i !== di && i !== ai && !toDate(c) && toAmount(c) === null).sort((a, b) => b.length - a.length)[0] || '';
+    }
+    if (!date || !amount) return;
+    out.push(categorize(date, amount, desc));
+  });
+  return out;
+}
+function categorize(date, amount, raw) {
+  const hit = matchMerchant(raw);
+  const r = { date, amount: Math.round(Math.abs(amount) * 100) / 100, raw, desc: '', cat: 'Прочее', sub: '', type: amount < 0 ? 'Расход' : 'Доход', check: false, dup: false, on: true };
+  const salary = /wynagrodz|pensj|salary|payroll|зарплат/i.test(normTxt(raw));
+  if (r.type === 'Доход') {
+    if (hit && hit.cat !== 'Доходы' && !salary) { r.type = 'Возврат'; r.cat = hit.cat; r.desc = 'Повернення — ' + hit.name; }
+    else { r.cat = 'Доходы'; r.sub = salary ? 'Зарплата' : 'Інше'; r.desc = salary ? (hit ? hit.name + ' — зарплата' : 'Зарплата') : cleanDesc(raw); }
+  } else if (hit) { r.cat = hit.cat; r.sub = hit.sub; r.desc = hit.name; r.check = !!hit.check; }
+  else { r.desc = cleanDesc(raw); r.check = true; }
+  r.dup = S.ops.some(o => o.date.toDateString() === date.toDateString() && Math.abs(o.amount - r.amount) < 0.005 && (o.type === 'Доход') === (r.type === 'Доход'));
+  if (r.dup) r.on = false;
+  return r;
+}
+function cleanDesc(raw) {
+  return String(raw).replace(/(platnosc|płatność|zakup|transakcja)\s+(karta|kartą|blik)?/ig, '').replace(/\b\d{2}[.\/-]\d{2}[.\/-]\d{4}\b/g, '')
+    .replace(/\b(nr|karta|card)\s*[\dx*]{4,}/ig, '').replace(/\s*·\s*$/, '').replace(/\s{2,}/g, ' ').trim().slice(0, 60) || 'Операція з виписки';
+}
+const SAMPLE_CSV = `Data transakcji;Data księgowania;Opis;Kwota;Waluta
+11.10.2026;11.10.2026;Płatność kartą 11.10.2026 ZABKA Z5521 WARSZAWA;-14,99;PLN
+10.10.2026;11.10.2026;Płatność kartą 10.10.2026 ORLEN STACJA NR 4410 WARSZAWA;-212,40;PLN
+10.10.2026;10.10.2026;Płatność kartą 10.10.2026 GLOVO WARSZAWA;-46,80;PLN
+09.10.2026;10.10.2026;Płatność kartą 09.10.2026 KEBAB MOKOTOW;-27,80;PLN
+09.10.2026;09.10.2026;Zakup BLIK ALLEGRO.PL SP. Z O.O.;-89,99;PLN
+08.10.2026;09.10.2026;Płatność kartą 08.10.2026 PEPCO 1187 WARSZAWA;-36,00;PLN
+08.10.2026;08.10.2026;Przelew na telefon BLIK Anna K.;-60,00;PLN
+07.10.2026;07.10.2026;Wynagrodzenie za 09.2026 JYSK SP. Z O.O.;5214,48;PLN
+07.10.2026;07.10.2026;Opłata za prowadzenie rachunku;-7,00;PLN
+06.10.2026;07.10.2026;Płatność kartą 06.10.2026 MEDIA EXPERT WARSZAWA;-149,00;PLN
+05.10.2026;06.10.2026;Zwrot ZALANDO SE;79,90;PLN
+05.10.2026;05.10.2026;Płatność kartą 05.10.2026 LUXMED WARSZAWA;-180,00;PLN`;
+
+const IMP = { rows: [], name: '' };
+const catOptions = sel => Object.entries(CATS).map(([k, c]) => `<option value="${k}"${k === sel ? ' selected' : ''}>${c.emoji} ${c.uk}</option>`).join('');
+function renderImport() {
+  const R = IMP.rows;
+  const on = R.filter(r => r.on);
+  const exp = on.filter(r => r.type !== 'Доход').reduce((s, r) => s + (r.type === 'Возврат' ? -r.amount : r.amount), 0);
+  const inc = on.filter(r => r.type === 'Доход').reduce((s, r) => s + r.amount, 0);
+  $('imp-file-name').textContent = IMP.name;
+  $('imp-stats').innerHTML = [
+    plural(R.length, 'операція', 'операції', 'операцій'),
+    'витрати ' + money(exp), 'доходи ' + money(inc),
+    R.filter(r => r.check).length ? '⚠ на перевірку: ' + R.filter(r => r.check).length : '',
+    R.filter(r => r.dup).length ? 'можливі дублі: ' + R.filter(r => r.dup).length + ' (не вибрані)' : '',
+  ].filter(Boolean).map(t => `<span class="chip">${t}</span>`).join('');
+  $('imp-list').innerHTML = R.map((r, i) => {
+    const inn = r.type !== 'Расход';
+    return `<div class="imp-row${r.on ? '' : ' off'}" data-i="${i}">
+      <input type="checkbox" id="imp-on-${i}" ${r.on ? 'checked' : ''} aria-label="Імпортувати">
+      <div style="min-width:0"><div class="t1">${esc(r.desc)}</div>
+        <div class="t2"><span>${dShort.format(r.date)}</span>${r.check ? '<span class="flag">перевірити</span>' : ''}${r.dup ? '<span class="flag">вже є</span>' : ''}${r.type === 'Возврат' ? '<span class="flag">повернення</span>' : ''}<span title="${esc(r.raw)}">${esc(r.raw)}</span></div></div>
+      <select id="imp-cat-${i}" aria-label="Категорія">${catOptions(r.cat)}</select>
+      <div class="amt num ${inn ? 'in' : ''}">${inn ? '+' : '−'}${money(r.amount)}</div></div>`;
+  }).join('') || '<div class="empty">У файлі не знайдено операцій. Перевірте, що це CSV-виписка з датою та сумою.</div>';
+  $('imp-save').textContent = 'Записати ' + plural(on.length, 'операцію', 'операції', 'операцій');
+  $('imp-save').disabled = !on.length;
+  $('imp-list').querySelectorAll('.imp-row').forEach(row => {
+    const r = R[+row.dataset.i];
+    row.querySelector('input').onchange = e => { r.on = e.target.checked; renderImport(); };
+    row.querySelector('select').onchange = e => {
+      r.cat = e.target.value; r.check = false; r.sub = '';
+      if (r.cat === 'Доходы') r.type = 'Доход'; else if (r.type === 'Доход') r.type = 'Возврат';
+      renderImport();
+    };
+  });
+}
+function startImport(text, name) {
+  $('imp-err').hidden = true;
+  let rows;
+  try { rows = parseStatement(text); } catch (e) { rows = []; }
+  if (!rows.length) { $('imp-err').textContent = 'Не вдалося знайти операції у файлі. Потрібна CSV-виписка, де є дата і сума кожної операції.'; $('imp-err').hidden = false; return; }
+  IMP.rows = rows.sort((a, b) => b.date - a.date); IMP.name = name;
+  $('imp-start').hidden = true; $('imp-review').hidden = false;
+  renderImport(); pop($('imp-review'));
+}
+function readFile(file) {
+  if (!file) return;
+  if (!/\.(csv|txt)$/i.test(file.name)) { $('imp-err').textContent = 'Поки що підтримується CSV. Завантажте виписку з банку у форматі CSV.'; $('imp-err').hidden = false; return; }
+  const fr = new FileReader();
+  fr.onload = () => {
+    const t = String(fr.result);
+    if (t.includes('\uFFFD')) { const f2 = new FileReader(); f2.onload = () => startImport(String(f2.result), file.name); f2.readAsText(file, 'windows-1250'); }
+    else startImport(t, file.name);
+  };
+  fr.readAsText(file, 'utf-8');
+}
+function resetImport() { IMP.rows = []; $('imp-review').hidden = true; $('imp-start').hidden = false; $('imp-file').value = ''; }
+$('imp-file').onchange = e => readFile(e.target.files[0]);
+$('imp-sample').onclick = () => startImport(SAMPLE_CSV, 'приклад_виписки.csv');
+$('imp-cancel').onclick = resetImport;
+['dragenter', 'dragover'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', e => readFile(e.dataTransfer.files[0]));
+$('imp-save').onclick = async () => {
+  const on = IMP.rows.filter(r => r.on);
+  if (!api.ready()) { toast('Спершу підключіть таблицю (⚙ угорі)'); return; }
+  const btn = $('imp-save'); btn.disabled = true; btn.textContent = 'Записую…';
+  try {
+    const r = await api.call('import', { ops: on.map(x => ({ date: ymd(x.date), type: x.type, cat: x.cat, sub: x.sub, desc: x.desc, amount: x.amount, check: x.check, raw: x.raw })) });
+    r.added.forEach(o => S.ops.push(toOp(o)));
+    S.ops.sort((a, b) => b.date - a.date); cacheOps();
+    resetImport(); render(); renderReports();
+    go('home');
+    toast('Записано ' + plural(r.added.length, 'операцію', 'операції', 'операцій') + (r.skipped ? ', пропущено вже наявних: ' + r.skipped : ''));
+  } catch (e) { toast(e.message); renderImport(); }
+};
+
+matchMedia('(min-width: 960px)').addEventListener('change', () => { S.opsShown = baseShown(); render(); });
+
+(async function start() {
+  const t = store.get('theme', ''); if (t) document.documentElement.dataset.theme = t;
+  S.period = store.get('period', 'month'); S.mode = store.get('mode', 'list');
+  const c = cachedOps(); S.ops = c ? c.ops : [];
+  S.anim = true;
+  render(); renderReports();
+  if (S.mode === 'list') stagger($('list-mode'), '.card, .cat-row, .chip, .day, .op', 30);
+  $('set-btn').onclick = openSettings;
+  if (api.ready()) refresh(true); else { setStatus('off', 'Таблицю не підключено'); openSettings(); }
+})();
+// Повернулись у застосунок — підтягнути нові записи (напр., із шорткату)
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('sheet').hidden) refresh(false); });
+</script>
+
+</body>
+</html>
