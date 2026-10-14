@@ -62,6 +62,7 @@ html, body { background: var(--bg); }
 body { color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.4; padding-inline: 16px; padding-block: 0; }
 button { font: inherit; color: inherit; cursor: pointer; }
 input, select, textarea { font-size: 16px !important; }
+#f-amount { font-size: 26px !important; }
 button, .nav, .drawer, .card-head, .chips-sel, .periods { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 #app { touch-action: pan-y; }
 .periods, .chips-sel, .imp-list { touch-action: pan-x pan-y; }
@@ -282,6 +283,25 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .exp-sum b { font-size: 16px; }
 .exp-sum .wide { grid-column: 1 / -1; }
 .exp-sum .wide b { font-size: 14px; }
+
+/* вибір категорії — список як контекстне меню */
+.picker { position: relative; }
+.picker-btn { width: 100%; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 14px; padding: 11px 14px; text-align: left; font-size: 16px; font-weight: 600; }
+.picker-btn[aria-expanded="true"] { border-color: var(--accent); }
+.picker-btn:disabled { opacity: .8; cursor: default; }
+.picker-btn:disabled .pc { display: none; }
+.picker .pe { font-size: 20px; width: 26px; text-align: center; flex: none; }
+.picker .pn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker .ph { color: var(--muted); font-weight: 500; }
+.picker .pc { color: var(--muted); transition: transform .2s; }
+.picker-btn[aria-expanded="true"] .pc { transform: rotate(180deg); }
+.picker-menu { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; max-height: min(340px, 50vh); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px; padding: 6px; box-shadow: 0 18px 40px -12px var(--scrim); transform-origin: top center; }
+.picker-menu button { width: 100%; display: flex; align-items: center; gap: 10px; border: 0; background: transparent; border-radius: 11px; padding: 10px 10px; font-size: 15px; font-weight: 600; text-align: left; }
+.picker-menu button + button { margin-top: 2px; }
+.picker-menu button[aria-selected="true"] { background: var(--line); }
+.picker-menu button[aria-selected="true"]::after { content: "✓"; color: var(--accent); font-weight: 800; }
+@media (hover: hover) { .picker-menu button:hover { background: var(--line); } }
 
 /* шторка */
 .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 10; }
@@ -1188,7 +1208,7 @@ function closeSheet() {
   si.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) { can = false; return; }
     y0 = e.touches[0].clientY; t0 = Date.now(); dy = 0; drag = false;
-    can = si.scrollTop <= 0 || !!e.target.closest('.grab, h3');
+    can = !e.target.closest('.picker-menu') && (si.scrollTop <= 0 || !!e.target.closest('.grab, h3'));
   }, { passive: true });
   si.addEventListener('touchmove', e => {
     if (!can) return;
@@ -1234,21 +1254,42 @@ function openEditor(op) {
     <div class="seg seg3" role="group" aria-label="Тип">${Object.entries(TYPE_UK).map(([k, t]) => `<button type="button" data-t="${k}" aria-pressed="${form.type === k}">${t}</button>`).join('')}</div>
     <label class="field"><span>Сума, zł</span><input id="f-amount" inputmode="decimal" placeholder="0,00" autocomplete="off" value="${esc(amountText)}"></label>
     <label class="field"><span>Назва</span><input id="f-desc" placeholder="Наприклад, Biedronka" autocomplete="off" value="${edit ? esc(op.desc) : ''}"></label>
-    <div class="field" id="cat-field"><span>Категорія</span><div class="cats" id="f-cats"></div></div>
-    <div class="row2">
-      <label class="field"><span>Дата</span><input id="f-date" type="date" value="${ymd(edit ? op.date : new Date())}"></label>
-      <label class="field"><span>Підкатегорія</span><input id="f-sub" placeholder="Необов'язково" autocomplete="off" value="${edit ? esc(op.sub || '') : ''}"></label>
+    <div class="field picker" id="cat-field"><span>Категорія</span>
+      <button type="button" class="picker-btn" id="f-cat-btn" aria-haspopup="listbox" aria-expanded="false"></button>
+      <div class="picker-menu" id="f-cat-menu" role="listbox" aria-label="Категорія" hidden></div>
     </div>
+    <label class="field"><span>Дата</span><input id="f-date" type="date" value="${ymd(edit ? op.date : new Date())}"></label>
+    <label class="field"><span>Нотатки</span><input id="f-sub" placeholder="Необов'язково" autocomplete="off" value="${edit ? esc(op.sub || '') : ''}"></label>
     ${edit ? `<div class="meta-line"><span>Джерело: ${esc(op.source || '—')}</span>${op.check ? '<span class="flag">на перевірці</span>' : ''}</div>` : ''}
     <div class="err" id="f-err" hidden></div>
     <button class="save" type="button" id="f-save">${edit ? 'Зберегти зміни' : 'Зберегти'}</button>
     ${edit ? '<button class="danger" type="button" id="f-del">Видалити операцію</button>' : ''}`);
+  // категорія — стилізований список, що розкривається як контекстне меню
+  const btn = $('f-cat-btn'), menu = $('f-cat-menu');
+  const closeMenu = () => {
+    if (menu.hidden) return;
+    btn.setAttribute('aria-expanded', 'false');
+    if (reduceMotion()) { menu.hidden = true; return; }
+    menu.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-6px) scale(.98)' }], { duration: 140, easing: 'ease-in' }).onfinish = () => { menu.hidden = true; };
+  };
+  const openMenu = () => {
+    menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    const sel = menu.querySelector('[aria-selected="true"]');
+    if (sel) menu.scrollTop = sel.offsetTop - menu.clientHeight / 2 + sel.offsetHeight / 2;
+    if (!reduceMotion()) menu.animate([{ opacity: 0, transform: 'translateY(-6px) scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  };
   const drawCats = () => {
     const list = form.type === 'Доход' ? [['Доходы', CATS['Доходы']]] : Object.entries(CATS).filter(([k]) => k !== 'Доходы');
     if (form.type === 'Доход') form.cat = 'Доходы'; else if (form.cat === 'Доходы') form.cat = null;
-    $('f-cats').innerHTML = list.map(([k, c]) => `<button type="button" data-k="${k}" aria-pressed="${form.cat === k}"><span>${c.emoji}</span>${c.uk}</button>`).join('');
-    $('f-cats').querySelectorAll('button').forEach(b => b.onclick = () => { form.cat = b.dataset.k; drawCats(); });
+    const c = form.cat && CATS[form.cat];
+    btn.innerHTML = c ? `<span class="pe">${c.emoji}</span><span class="pn">${c.uk}</span><span class="pc" aria-hidden="true">▾</span>`
+                      : `<span class="pe">🗂️</span><span class="pn ph">Оберіть категорію</span><span class="pc" aria-hidden="true">▾</span>`;
+    btn.disabled = form.type === 'Доход';
+    menu.innerHTML = list.map(([k, v]) => `<button type="button" role="option" data-k="${k}" aria-selected="${form.cat === k}"><span class="pe">${v.emoji}</span><span class="pn">${v.uk}</span></button>`).join('');
+    menu.querySelectorAll('button').forEach(b => b.onclick = () => { form.cat = b.dataset.k; drawCats(); closeMenu(); });
   };
+  btn.onclick = e => { e.stopPropagation(); menu.hidden ? openMenu() : closeMenu(); };
+  $('sheet-in').onpointerdown = e => { if (!e.target.closest('#cat-field')) closeMenu(); };
   drawCats();
   $('sheet-in').querySelectorAll('.seg3 button').forEach(b => b.onclick = () => {
     form.type = b.dataset.t;
@@ -1264,7 +1305,7 @@ function openEditor(op) {
     if (!(amount > 0)) return fail('Введіть суму більшу за нуль, наприклад 24,90.');
     if (!form.cat) return fail('Оберіть категорію.');
     if (!/^\d{4}-\d{2}-\d{2}$/.test($('f-date').value)) return fail('Оберіть дату.');
-    if (!backend.ready() && !auth.email()) return fail('Спершу увійдіть (⚙ угорі).');
+    if (!backend.ready() && !auth.email()) return fail('Спершу увійдіть: Налаштування внизу екрана.');
     const data = { date: $('f-date').value, type: form.type, cat: form.cat, sub: $('f-sub').value.trim(),
       desc: $('f-desc').value.trim() || catOf(form.cat).uk, amount: Math.round(amount * 100) / 100 };
     const btn = $('f-save'); busy(btn, true, 'Зберігаю…'); err.hidden = true;
