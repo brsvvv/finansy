@@ -75,6 +75,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .top-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .top .top-add { display: none; }
 .top .menu-btn { display: inline-flex; }
+/* телефон: лише нижня панель, без меню ☰ (планшет і комп'ютер — без змін) */
+@media (max-width: 639px) { .top .menu-btn, .drawer, .drawer-scrim { display: none !important; } }
 
 /* шапка */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 6px; }
@@ -1373,6 +1375,7 @@ function pop(el) { if (reduceMotion() || !el) return; el.classList.remove('fade-
 $('q').oninput = renderSearch;
 const VIEWS = { home: 'Фінанси', reports: 'Звіти', import: 'Дані' };
 const VIEW_ORDER = ['home', 'reports', 'import'];
+const isPhone = () => matchMedia('(max-width: 639px)').matches;
 function go(view, dir, opts = {}) {
   const prev = S.view;
   if (dir === undefined && prev !== view) dir = VIEW_ORDER.indexOf(view) > VIEW_ORDER.indexOf(prev) ? 1 : -1;
@@ -1460,7 +1463,7 @@ function slideIn(el, dir) {
     const shift = n ? dx : dx * 0.25;
     const ms = reduceMotion() ? 0 : Math.round(Math.min(320, Math.max(160, (commit ? W - Math.abs(dx) : Math.abs(dx)) / 1.4)));
     const done = () => { c.style.transform = ''; c.style.willChange = ''; };
-    if (!n && d === -1 && Math.abs(dx) > 60) { done(); cur = null; return openDrawer(); }   // свайп вправо на Головній — меню
+    if (!n && d === -1 && Math.abs(dx) > 60 && !isPhone()) { done(); cur = null; return openDrawer(); }   // на планшеті/комп'ютері свайп вправо на Головній — меню
     if (commit) {
       c.animate([{ transform: `translateX(${shift}px)` }, { transform: `translateX(${-d * W}px)` }], { duration: ms, easing: EASE, fill: 'forwards' });
       n.animate([{ transform: `translate3d(${shift + d * W}px, ${lift}px, 0)` }, { transform: `translate3d(0, ${lift}px, 0)` }], { duration: ms, easing: EASE, fill: 'forwards' })
