@@ -2019,7 +2019,7 @@ async function ocrWorker() {
   if (OCR.worker) return OCR.worker;
   if (!OCR.loading) OCR.loading = (async () => {
     if (!window.Tesseract) await loadScript(OCR_CDN + 'tesseract.js@5.1.1/dist/tesseract.min.js');
-    const w = await Tesseract.createWorker(['pol', 'eng'], 1, {
+    const w = await Tesseract.createWorker(['pol', 'ukr', 'eng'], 1, {
       workerPath: OCR_CDN + 'tesseract.js@5.1.1/dist/worker.min.js',
       corePath: OCR_CDN + 'tesseract.js-core@5.1.1',
       logger: m => { if (OCR.onLog) OCR.onLog(m); },
