@@ -193,6 +193,17 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .drop .big-ico { font-size: 34px; }
 .drop strong { font-size: 16px; }
 .drop span { color: var(--muted); font-size: 13px; max-width: 46ch; }
+.ocr-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ocr-btns label { position: relative; display: grid; gap: 4px; justify-items: center; padding: 16px 10px; border: 1px solid var(--line); border-radius: 18px; font-weight: 700; cursor: pointer; text-align: center; }
+.ocr-btns label:active { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ocr-btns input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.ocr-btns .big-ico { font-size: 26px; }
+.tag-test { font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 2px 8px; border-radius: 99px; background: color-mix(in srgb, var(--accent) 22%, transparent); vertical-align: middle; margin-left: 6px; }
+.ocr-prog { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+.ocr-bar { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.ocr-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s; }
+#imp-ocr summary { cursor: pointer; color: var(--accent); font-weight: 700; font-size: 14px; padding: 4px 0; }
+#imp-ocr pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; max-height: 320px; overflow: auto; background: color-mix(in srgb, var(--line) 40%, transparent); padding: 10px; border-radius: 12px; margin: 6px 0 0; }
 .link-btn { border: 0; background: transparent; color: var(--accent); font-weight: 700; padding: 6px; }
 .imp-list { display: grid; }
 .imp-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -201,7 +212,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .imp-row .t1 { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .imp-row .t2 { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; gap: 6px; align-items: center; }
 .imp-row select { grid-column: 2 / -1; width: 100%; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); border-radius: 12px; padding: 8px 10px; font: inherit; font-size: 14px; }
-.imp-row .amt { font-weight: 700; text-align: right; }
+.imp-row .amt { font-weight: 700; text-align: right; white-space: nowrap; grid-column: 3; grid-row: 1; }
 .imp-row .amt.in { color: var(--good); }
 .imp-row.off { opacity: .45; }
 .imp-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -401,6 +412,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   .grab { display: none; }
   .toast { bottom: 32px; }
   .imp-row { grid-template-columns: 24px minmax(0, 1fr) 230px 120px; }
+  .imp-row .amt { grid-column: auto; grid-row: auto; }
   .imp-row select { grid-column: auto; }
 }
 
@@ -477,18 +489,17 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
   <!-- Дані: експорт і імпорт -->
   <section id="view-import" class="app" style="padding:0;gap:14px" hidden>
-    <article class="card" id="exp-card">
-      <div class="data-head"><h2>Завантажити операції</h2><p>Файл CSV відкривається в Excel, Numbers і Google Таблицях.</p></div>
-      <div class="field"><span>Період</span><div class="chips-sel" id="exp-period" role="group" aria-label="Період експорту"></div></div>
-      <div class="row2" id="exp-custom" hidden>
-        <label class="field"><span>Від</span><input id="exp-from" type="date"></label>
-        <label class="field"><span>До</span><input id="exp-to" type="date"></label>
+    <div class="data-head" id="ocr-head" style="padding:6px 4px 0"><h2>Фото чека або скріншот<span class="tag-test">ТЕСТ</span></h2></div>
+    <article class="card" id="ocr-card">
+      <p style="margin:0;font-size:14px;color:var(--muted)">Чек — запишемо одну витрату на всю суму. Скріншот із банку — кожен рядок із сумою стане окремою операцією. Розпізнавання працює на телефоні, фото нікуди не надсилаються.</p>
+      <div class="ocr-btns" id="ocr-btns">
+        <label for="ocr-cam"><input id="ocr-cam" type="file" accept="image/*" capture="environment"><span class="big-ico" aria-hidden="true">📷</span>Сфотографувати чек</label>
+        <label for="ocr-gal"><input id="ocr-gal" type="file" accept="image/*" multiple><span class="big-ico" aria-hidden="true">🖼️</span>Вибрати фото чи скріншоти</label>
       </div>
-      <div class="field"><span>Що включити</span><div class="chips-sel" id="exp-type" role="group" aria-label="Тип операцій"></div></div>
-      <div class="exp-sum" id="exp-sum"></div>
-      <button class="save" type="button" id="exp-go">Завантажити CSV</button>
+      <div class="ocr-prog" id="ocr-prog" hidden><span id="ocr-msg">Готую…</span><div class="ocr-bar"><i id="ocr-bar"></i></div></div>
+      <div class="err" id="ocr-err" hidden></div>
     </article>
-    <div class="data-head" style="padding:6px 4px 0"><h2>Імпорт виписки з банку</h2></div>
+    <div class="data-head" id="imp-head" style="padding:6px 4px 0"><h2>Імпорт виписки з банку</h2></div>
     <article class="card" id="imp-start">
       <label class="drop" id="drop" for="imp-file">
         <input id="imp-file" type="file" accept=".csv,.txt,text/csv">
@@ -503,10 +514,22 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
       <h2><span id="imp-title">Перевірте операції</span><small id="imp-file-name"></small></h2>
       <div class="chips" id="imp-stats"></div>
       <div class="imp-list" id="imp-list"></div>
+      <details id="imp-ocr" hidden><summary>Показати розпізнаний текст</summary><pre id="imp-ocr-text"></pre></details>
       <div class="imp-actions">
         <button class="save" type="button" id="imp-save">Записати</button>
         <button class="ghost" type="button" id="imp-cancel">Скасувати</button>
       </div>
+    </article>
+    <article class="card" id="exp-card">
+      <div class="data-head"><h2>Завантажити операції</h2><p>Файл CSV відкривається в Excel, Numbers і Google Таблицях.</p></div>
+      <div class="field"><span>Період</span><div class="chips-sel" id="exp-period" role="group" aria-label="Період експорту"></div></div>
+      <div class="row2" id="exp-custom" hidden>
+        <label class="field"><span>Від</span><input id="exp-from" type="date"></label>
+        <label class="field"><span>До</span><input id="exp-to" type="date"></label>
+      </div>
+      <div class="field"><span>Що включити</span><div class="chips-sel" id="exp-type" role="group" aria-label="Тип операцій"></div></div>
+      <div class="exp-sum" id="exp-sum"></div>
+      <button class="save" type="button" id="exp-go">Завантажити CSV</button>
     </article>
   </section>
 
@@ -737,9 +760,9 @@ const backend = {
       const seen = new Set((have.values || []).map(r => String(r[0] || '')));
       const rows = [], added = []; let skipped = 0;
       for (const op of ops) {
-        const oid = 'BNK_' + await sha([op.date, op.type, (+op.amount).toFixed(2), op.raw || op.desc].join('|'));
+        const oid = (op.source === 'Фото' ? 'PHT_' : 'BNK_') + await sha([op.date, op.type, (+op.amount).toFixed(2), op.raw || op.desc].join('|'));
         if (seen.has(oid)) { skipped++; continue; }
-        seen.add(oid); rows.push(gsheet.rowValues(oid, op, 'Виписка')); added.push({ ...op, id: oid, source: 'Виписка' });
+        seen.add(oid); const src = op.source || 'Виписка'; rows.push(gsheet.rowValues(oid, op, src)); added.push({ ...op, id: oid, source: src });
       }
       if (rows.length) { const first = await gsheet.append(id, rows); added.forEach((o, i) => { o.row = first ? first + i : null; }); }
       return { added, skipped };
@@ -1938,9 +1961,13 @@ function startImport(text, name) {
   let rows;
   try { rows = parseStatement(text); } catch (e) { rows = []; }
   if (!rows.length) { $('imp-err').textContent = 'Не вдалося знайти операції у файлі. Потрібна CSV-виписка, де є дата і сума кожної операції.'; $('imp-err').hidden = false; return; }
-  IMP.rows = rows.sort((a, b) => b.date - a.date); IMP.name = name;
-  $('imp-start').hidden = true; $('imp-review').hidden = false;
+  IMP.rows = rows.sort((a, b) => b.date - a.date); IMP.name = name; IMP.source = 'Виписка';
+  showReview();
   renderImport(); pop($('imp-review'));
+}
+function showReview() {
+  $('imp-ocr').hidden = !IMP.ocr; $('imp-ocr').open = false; $('imp-ocr-text').textContent = IMP.ocr || '';
+  ['imp-start', 'ocr-card', 'ocr-head', 'imp-head'].forEach(k => { $(k).hidden = true; }); $('imp-review').hidden = false;
 }
 function readFile(file) {
   if (!file) return;
@@ -1953,7 +1980,7 @@ function readFile(file) {
   };
   fr.readAsText(file, 'utf-8');
 }
-function resetImport() { IMP.rows = []; $('imp-review').hidden = true; $('imp-start').hidden = false; $('imp-file').value = ''; }
+function resetImport() { IMP.rows = []; IMP.ocr = ''; $('imp-review').hidden = true; ['imp-start', 'ocr-card', 'ocr-head', 'imp-head'].forEach(k => { $(k).hidden = false; }); $('imp-file').value = ''; }
 $('imp-file').onchange = e => readFile(e.target.files[0]);
 $('imp-sample').onclick = () => startImport(SAMPLE_CSV, 'приклад_виписки.csv');
 $('imp-cancel').onclick = resetImport;
@@ -1962,10 +1989,10 @@ $('imp-cancel').onclick = resetImport;
 $('drop').addEventListener('drop', e => readFile(e.dataTransfer.files[0]));
 $('imp-save').onclick = async () => {
   const on = IMP.rows.filter(r => r.on);
-  if (!backend.ready() && !auth.email()) { toast('Спершу увійдіть (⚙ угорі)'); return; }
+  if (!backend.ready() && !auth.email()) { toast('Спершу увійдіть: Налаштування внизу екрана'); return; }
   const btn = $('imp-save'); btn.disabled = true; btn.textContent = 'Записую…';
   try {
-    const r = await backend.import( on.map(x => ({ date: ymd(x.date), type: x.type, cat: x.cat, sub: x.sub, desc: x.desc, amount: x.amount, check: x.check, raw: x.raw })));
+    const r = await backend.import( on.map(x => ({ date: ymd(x.date), type: x.type, cat: x.cat, sub: x.sub, desc: x.desc, amount: x.amount, check: x.check, raw: x.raw, source: IMP.source })));
     r.added.forEach(o => S.ops.push(toOp(o)));
     S.ops.sort((a, b) => b.date - a.date); cacheOps();
     resetImport(); refreshViews();
@@ -1973,6 +2000,180 @@ $('imp-save').onclick = async () => {
     toast('Записано ' + plural(r.added.length, 'операцію', 'операції', 'операцій') + (r.skipped ? ', пропущено вже наявних: ' + r.skipped : ''));
   } catch (e) { if (handleErr(e)) return; toast(e.message); renderImport(); }
 };
+
+/* ===== Фото чека / скріншот (тест): Tesseract.js прямо в браузері ===== */
+const OCR_CDN = 'https://cdn.jsdelivr.net/npm/';
+const OCR = { worker: null, loading: null };
+function ocrProgress(msg, frac) {
+  $('ocr-prog').hidden = false; $('ocr-msg').textContent = msg;
+  $('ocr-bar').style.width = Math.round(Math.max(0, Math.min(1, frac)) * 100) + '%';
+}
+function loadScript(src) {
+  return new Promise((ok, fail) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => fail(new Error('Не вдалося завантажити розпізнавання. Перевірте інтернет.')); document.head.appendChild(s); });
+}
+async function ocrWorker() {
+  if (OCR.worker) return OCR.worker;
+  if (!OCR.loading) OCR.loading = (async () => {
+    if (!window.Tesseract) await loadScript(OCR_CDN + 'tesseract.js@5.1.1/dist/tesseract.min.js');
+    const w = await Tesseract.createWorker(['pol', 'eng'], 1, {
+      workerPath: OCR_CDN + 'tesseract.js@5.1.1/dist/worker.min.js',
+      corePath: OCR_CDN + 'tesseract.js-core@5.1.1',
+      logger: m => { if (OCR.onLog) OCR.onLog(m); },
+    });
+    OCR.worker = w; return w;
+  })().catch(e => { OCR.loading = null; throw e; });
+  return OCR.loading;
+}
+/* Зменшити/збільшити, сірий; темну тему інвертувати (бінаризацію Tesseract робить сам) */
+async function ocrPrepare(file) {
+  const img = await new Promise((ok, fail) => {
+    const u = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { URL.revokeObjectURL(u); ok(im); };
+    im.onerror = () => { URL.revokeObjectURL(u); fail(new Error('Не вдалося відкрити зображення «' + file.name + '»')); };
+    im.src = u;
+  });
+  const W = img.naturalWidth, H = img.naturalHeight;
+  let k = Math.min(1, 2200 / Math.max(W, H));
+  if (W * k < 1000) k = Math.min(2.5, 1000 / W);
+  const c = document.createElement('canvas'); c.width = Math.round(W * k); c.height = Math.round(H * k);
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+  const d = x.getImageData(0, 0, c.width, c.height), p = d.data;
+  let sum = 0;
+  for (let i = 0; i < p.length; i += 4) { const g = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]; p[i] = g; sum += g; }
+  const dark = sum / (p.length / 4) < 110;
+  const shot = file.type === 'image/png';   // скріншоти iPhone — PNG, фото камери — JPEG/HEIC
+  for (let i = 0; i < p.length; i += 4) {
+    const g = dark ? 255 - p[i] : p[i];
+    p[i] = p[i + 1] = p[i + 2] = shot ? g * g / 255 : g;   // на скріншотах сірий дрібний текст робимо темнішим
+  }
+  x.putImageData(d, 0, 0);
+  return c;
+}
+
+/* --- Розбір тексту --- */
+const OCR_MONTHS = [['styc', 'sicn', 'jan'], ['lut', 'liut', 'feb'], ['marc', 'marz', 'ber', 'mar'], ['kwie', 'kvit', 'apr'], ['maj', 'trav', 'may'], ['czerw', 'cerv', 'jun'],
+  ['lip', 'jul'], ['sierp', 'serp', 'aug'], ['wrze', 'ver', 'sep'], ['pazdz', 'zovt', 'oct', 'paz'], ['listop', 'list', 'nov', 'lis'], ['grud', 'dec', 'gru']];
+const UK2LAT = { 'а':'a','б':'b','в':'v','г':'h','ґ':'g','д':'d','е':'e','є':'e','ж':'z','з':'z','и':'y','і':'i','ї':'i','й':'i','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'c','ш':'s','щ':'s','ь':'','ю':'iu','я':'ia' };
+function monthIdx(word) {
+  const w = normTxt(word).replace(/[а-яіїєґ]/g, ch => UK2LAT[ch] ?? ch);
+  if (w.length < 3) return -1;
+  for (let i = 0; i < 12; i++) if (OCR_MONTHS[i].some(s => w.startsWith(s))) return i;
+  return -1;
+}
+// Дата в рядку: 11.10.2026, 2026-10-11, 11-10-2026, 11 października (2026), Dzisiaj/Wczoraj
+function ocrDate(line) {
+  const t = normTxt(line);
+  let m = t.match(/\b(20\d{2})[-.\/](\d{1,2})[-.\/](\d{1,2})\b/);
+  if (m) return mkDate(+m[1], +m[2] - 1, +m[3]);
+  m = t.match(/\b(\d{1,2})[-.\/](\d{1,2})[-.\/](20\d{2}|\d{2})\b/);
+  if (m) return mkDate(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2] - 1, +m[1]);
+  m = t.match(/\b(\d{1,2})\s+([a-zа-яіїєґ]{3,})\.?(?:\s+(20\d{2}))?\b/);
+  if (m) { const mi = monthIdx(m[2]); if (mi > -1) return mkDate(m[3] ? +m[3] : guessYear(mi, +m[1]), mi, +m[1]); }
+  if (/^(dzis|dzisiaj|today|сьогодн|сегодн)/.test(t)) return new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
+  if (/^(wczoraj|yesterday|вчора|вчера)/.test(t)) return new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate() - 1);
+  return null;
+}
+function mkDate(y, m, d) { const r = new Date(y, m, d); return (r.getMonth() === m && d >= 1 && y > 2000 && r <= new Date(TODAY.getTime() + 864e5)) ? r : null; }
+function guessYear(m, d) { const y = TODAY.getFullYear(); return new Date(y, m, d) > TODAY ? y - 1 : y; }
+// Суми в рядку: «-14,99 zł», «45.67», «1 234,56 PLN», «+5 214,48»
+const reOcrAmt = /([-−–+]?)\s?(\d{1,3}(?:[ .]\d{3})+|\d+)\s?[,.]\s?(\d{2})(?!\d)\s*(zł|zl|zt|z1|pln|eur|€|usd|\$)?(?![a-z])/gi;
+function ocrAmounts(line) {
+  const out = [];
+  for (const m of line.matchAll(reOcrAmt)) {
+    const v = +(m[2].replace(/[ .]/g, '') + '.' + m[3]);
+    if (!(v > 0) || v > 1e6) continue;
+    out.push({ v, sign: m[1] ? (m[1] === '+' ? 1 : -1) : 0, cur: !!m[4], i: m.index, len: m[0].length });
+  }
+  return out;
+}
+const isReceipt = t => /paragon|fiskaln|\bnip\b|\bptu\b|sprzedaz opodat|do zaplaty|suma pln|kasjer|\bkasa\b/.test(normTxt(t));
+
+// Чек: одна витрата — сума «SUMA / DO ZAPŁATY / RAZEM», продавець — шапка чека
+function parseReceipt(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  let total = null, best = 9, date = null;
+  for (const l of lines) {
+    const n = normTxt(l);
+    if (!date) date = ocrDate(l);
+    if (/ptu|vat|podatek|opodat|reszta|gotowk|rabat|sprzed\.|kwota [a-g]\b/.test(n)) continue;
+    const pr = /suma pln|do zaplaty|suma\b/.test(n) ? 1 : /razem|total|naleznosc|lacznie/.test(n) ? 2 : /karta|zaplacono|platnosc/.test(n) ? 3 : 9;
+    if (pr < best) { const a = ocrAmounts(l); if (a.length) { total = a[a.length - 1].v; best = pr; } }
+  }
+  let check = false;
+  if (!total) { const all = lines.flatMap(ocrAmounts).map(a => a.v); if (all.length) { total = Math.max(...all); check = true; } }
+  if (!total) return [];
+  const head = lines.slice(0, 6).filter(l => /[a-ząćęłńóśźż]{3,}/i.test(l) && !/paragon|fiskaln|\bnip\b|^ul\.?|\d{2}-\d{3}/i.test(normTxt(l)));
+  const raw = (matchMerchant(lines.slice(0, 10).join(' ')) ? lines.slice(0, 10).join(' ') : head.slice(0, 2).join(' ')) || 'Чек';
+  const r = categorize(date || new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()), -total, raw);
+  if (!matchMerchant(raw)) r.desc = cleanDesc(head[0] || 'Чек').slice(0, 40);
+  r.raw = 'Чек: ' + (head[0] || '').slice(0, 50);
+  if (check || !date) r.check = true;
+  return [r];
+}
+// Скріншот банку: кожен рядок із сумою — окрема операція; заголовки-дати задають дату
+function parseScreenshot(text) {
+  const lines = text.split('\n').map(l => l.replace(/\s{2,}/g, ' ').trim()).filter(Boolean);
+  const out = []; let cur = null, prevText = '';
+  const skip = /saldo|dostepn|balance|available|баланс|залишок|доступн|limit|^szukaj|^search/;
+  for (const l of lines) {
+    const n = normTxt(l), amts = ocrAmounts(l), d = ocrDate(l);
+    const words = l.replace(reOcrAmt, ' ').replace(/\b(zł|zl|zt|pln)\b/gi, ' ').replace(/[^A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźżА-Яа-яІіЇїЄєҐґ'’ ]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (d && (!amts.length || amts.every(a => !a.cur && !a.sign))) { cur = d; if (words.length < 4 || monthIdx(words.split(' ')[0]) > -1 || /dzis|wczoraj|today|yesterday/.test(n)) continue; }
+    const a = amts.filter(x => x.cur || x.sign).pop() || (amts.length === 1 && /[,.]\d{2}\s*$/.test(l) ? amts[0] : null);
+    if (!a || skip.test(n)) { if (words.length >= 3 && !skip.test(n)) prevText = words; continue; }
+    const desc = words.length >= 3 ? words : prevText;
+    if (!desc) continue;
+    const signed = a.sign > 0 || /^\+/.test(l.slice(a.i).trim()) ? a.v : -a.v;
+    const r = categorize(cur || new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate()), signed, desc);
+    if (!cur) r.check = true;
+    out.push(r); prevText = '';
+  }
+  return out;
+}
+function parseOcr(text) { return isReceipt(text) ? parseReceipt(text) : parseScreenshot(text); }
+
+async function ocrFiles(files) {
+  files = [...files].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|heic|webp)$/i.test(f.name));
+  $('ocr-err').hidden = true;
+  if (!files.length) return;
+  $('ocr-btns').style.pointerEvents = 'none'; $('ocr-btns').style.opacity = .5;
+  const texts = [], rows = [];
+  try {
+    ocrProgress('Завантажую розпізнавання (перший раз ~10 МБ)…', 0.02);
+    OCR.onLog = m => { if (m.status && /load|init/i.test(m.status)) ocrProgress('Готую розпізнавання…', 0.05 + 0.1 * (m.progress || 0)); };
+    const w = await ocrWorker();
+    for (let i = 0; i < files.length; i++) {
+      const base = 0.15 + 0.85 * i / files.length, step = 0.85 / files.length;
+      ocrProgress(`Розпізнаю ${files.length > 1 ? (i + 1) + ' з ' + files.length : 'зображення'}…`, base);
+      OCR.onLog = m => { if (m.status === 'recognizing text') ocrProgress(`Розпізнаю ${files.length > 1 ? (i + 1) + ' з ' + files.length : 'зображення'}… ${Math.round(m.progress * 100)}%`, base + step * m.progress); };
+      const canvas = await ocrPrepare(files[i]);
+      const { data } = await w.recognize(canvas);
+      const t = (data.text || '').trim();
+      texts.push((files.length > 1 ? '— ' + files[i].name + ' —\n' : '') + t);
+      rows.push(...parseOcr(t));
+    }
+  } catch (e) {
+    $('ocr-err').textContent = e.message || 'Не вдалося розпізнати'; $('ocr-err').hidden = false;
+  } finally {
+    OCR.onLog = null; $('ocr-prog').hidden = true; $('ocr-btns').style.pointerEvents = ''; $('ocr-btns').style.opacity = '';
+    $('ocr-cam').value = ''; $('ocr-gal').value = '';
+  }
+  if (!texts.length) return;
+  if (!rows.length) {
+    $('ocr-err').innerHTML = 'Не знайшов сум на зображенні. Спробуйте чіткіше фото при гарному світлі або інший скріншот.<br><button class="link-btn" type="button" id="ocr-show">Показати розпізнаний текст</button>';
+    $('ocr-err').hidden = false;
+    $('ocr-show').onclick = () => { $('ocr-err').innerHTML = '<pre style="white-space:pre-wrap;font-size:12px;color:var(--muted)">' + esc(texts.join('\n\n') || '(порожньо)') + '</pre>'; };
+    return;
+  }
+  IMP.rows = rows.sort((a, b) => b.date - a.date);
+  IMP.name = files.length > 1 ? plural(files.length, 'зображення', 'зображення', 'зображень') : 'фото';
+  IMP.source = 'Фото'; IMP.ocr = texts.join('\n\n');
+  showReview(); renderImport(); pop($('imp-review'));
+  $('imp-review').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+$('ocr-cam').onchange = e => ocrFiles(e.target.files);
+$('ocr-gal').onchange = e => ocrFiles(e.target.files);
 
 matchMedia('(min-width: 960px)').addEventListener('change', () => { S.opsShown = baseShown(); render(); });
 
