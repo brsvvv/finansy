@@ -212,6 +212,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .imp-row .t1 { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .imp-row .t2 { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; gap: 6px; align-items: center; }
 .imp-row select { grid-column: 2 / -1; width: 100%; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); border-radius: 12px; padding: 8px 10px; font: inherit; font-size: 14px; }
+.imp-date { position: relative; flex: none; color: var(--fg); border-bottom: 1px dashed currentColor; cursor: pointer; }
+.imp-date.warn { color: var(--c2); font-weight: 700; }
+.imp-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; }
 .imp-row .amt { font-weight: 700; text-align: right; white-space: nowrap; grid-column: 3; grid-row: 1; }
 .imp-row .amt.in { color: var(--good); }
 .imp-row.off { opacity: .45; }
@@ -1940,7 +1943,7 @@ function renderImport() {
     return `<div class="imp-row${r.on ? '' : ' off'}" data-i="${i}">
       <input type="checkbox" id="imp-on-${i}" ${r.on ? 'checked' : ''} aria-label="Імпортувати">
       <div style="min-width:0"><div class="t1">${esc(r.desc)}</div>
-        <div class="t2"><span>${dShort.format(r.date)}</span>${r.check ? '<span class="flag">перевірити</span>' : ''}${r.dup ? '<span class="flag">вже є</span>' : ''}${r.type === 'Возврат' ? '<span class="flag">повернення</span>' : ''}<span title="${esc(r.raw)}">${esc(r.raw)}</span></div></div>
+        <div class="t2"><label class="imp-date${r.noDate ? ' warn' : ''}" title="Змінити дату">${r.noDate ? 'дата? ' : ''}${dShort.format(r.date)}<input type="date" value="${ymd(r.date)}" max="${ymd(new Date())}" aria-label="Дата"></label>${r.check ? '<span class="flag">перевірити</span>' : ''}${r.dup ? '<span class="flag">вже є</span>' : ''}${r.type === 'Возврат' ? '<span class="flag">повернення</span>' : ''}<span title="${esc(r.raw)}">${esc(r.raw)}</span></div></div>
       <select id="imp-cat-${i}" aria-label="Категорія">${catOptions(r.cat)}</select>
       <div class="amt num ${inn ? 'in' : ''}">${inn ? '+' : '−'}${money(r.amount)}</div></div>`;
   }).join('') || '<div class="empty">У файлі не знайдено операцій. Перевірте, що це CSV-виписка з датою та сумою.</div>';
@@ -1948,7 +1951,8 @@ function renderImport() {
   $('imp-save').disabled = !on.length;
   $('imp-list').querySelectorAll('.imp-row').forEach(row => {
     const r = R[+row.dataset.i];
-    row.querySelector('input').onchange = e => { r.on = e.target.checked; renderImport(); };
+    row.querySelector('input[type=checkbox]').onchange = e => { r.on = e.target.checked; renderImport(); };
+    row.querySelector('.imp-date input').onchange = e => { if (e.target.value) { r.date = fromYmd(e.target.value); r.noDate = false; renderImport(); } };
     row.querySelector('select').onchange = e => {
       r.cat = e.target.value; r.check = false;
       if (r.cat === 'Доходы') r.type = 'Доход'; else if (r.type === 'Доход') r.type = 'Возврат';
@@ -2104,6 +2108,8 @@ function ocrDate(line) {
   if (m) return mkDate(+m[1], +m[2] - 1, +m[3]);
   m = t.match(/\b(\d{1,2})[-.\/](\d{1,2})[-.\/](20\d{2}|\d{2})\b/);
   if (m) return mkDate(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2] - 1, +m[1]);
+  m = t.match(/^(?:[a-zа-яіїєґ]{2,12}\.?,?\s+)?(\d{1,2})[.\/](\d{1,2})\.?(?:,?\s+[a-zа-яіїєґ]{2,12}\.?)?(?:,?\s+\d{1,2}:\d{2})?$/);
+  if (m && +m[2] <= 12) { const r = mkDate(guessYear(+m[2] - 1, +m[1]), +m[2] - 1, +m[1]); if (r) return r; }
   m = t.match(/\b(\d{1,2})\s+([a-zа-яіїєґ]{3,})\.?(?:\s+(20\d{2}))?\b/);
   if (m) { const mi = monthIdx(m[2]); if (mi > -1) return mkDate(m[3] ? +m[3] : guessYear(mi, +m[1]), mi, +m[1]); }
   const back = relDaysBack(line);
@@ -2144,6 +2150,7 @@ function parseReceipt(text) {
   if (!matchMerchant(raw)) r.desc = cleanDesc(head[0] || 'Чек').slice(0, 40);
   r.raw = 'Чек: ' + (head[0] || '').slice(0, 50);
   if (check || !date) r.check = true;
+  if (!date) r.noDate = true;
   return [r];
 }
 /* Скріншот банку: кожен рядок із сумою — окрема операція.
@@ -2155,10 +2162,17 @@ function parseScreenshot(text) {
   const items = [];   // {k:'tx', ...} | {k:'date', d, own}
   let prevText = '';
   const skip = /saldo|dostepn|balance|available|баланс|залишок|доступн|limit|^szukaj|^search/;
+  // заголовки екрана — не назви операцій
+  const title = /^(historia|transakcje|operacje|ostatnie|wszystkie|wydatki|wplywy|history|transactions|all|recent|історія|операції|витрати|история|операции|расходы)\b/;
   for (const l of lines) {
     const n = normTxt(l), amts = ocrAmounts(l), d = ocrDate(l);
     const words = l.replace(reOcrAmt, ' ').replace(/\b\d{1,2}:\d{2}\b/g, ' ').replace(/\b(zł|zl|zt|pln)\b/gi, ' ').replace(/[^A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźżА-Яа-яІіЇїЄєҐґ'’ ]/g, ' ').replace(/\s+/g, ' ').trim();
     const a = amts.filter(x => x.cur || x.sign).pop() || (amts.length === 1 && /[,.]\d{2}\s*$/.test(l) && !d ? amts[0] : null);
+    const dateOnlyWords = d ? words.split(' ').filter(w => w && relDaysBack(w) === null && monthIdx(w) < 0).join(' ') : words;
+    const timed = /\b\d{1,2}:\d{2}\b/.test(l);
+    // заголовок дня з підсумком: «Wczoraj −261,39 zł» (якщо над ним немає назви операції, що чекає суми)
+    const waiting = /[a-ząćęłńóśźżа-яії]{3,}/i.test(prevText.replace(/płatność|platnosc|kartą|karta|blik|przelew|transakcja/gi, ''));
+    if (d && a && dateOnlyWords.length < 3 && !timed && !waiting) { items.push({ k: 'date', d, own: false }); prevText = ''; continue; }
     if (d && !a) {
       // рядок лише з датою (та, можливо, часом і словами на кшталт «Płatność kartą»)
       const own = /\b\d{1,2}:\d{2}\b/.test(l);
@@ -2167,7 +2181,7 @@ function parseScreenshot(text) {
       if (rest.length >= 3 && !own) prevText = rest;
       continue;
     }
-    if (!a || skip.test(n)) { if (words.length >= 3 && !skip.test(n)) prevText = words; continue; }
+    if (!a || skip.test(n)) { if (words.length >= 3 && !skip.test(n) && !title.test(n)) prevText = words; continue; }
     const own = d ? words.split(' ').filter(w => relDaysBack(w) === null && monthIdx(w) < 0).join(' ') : words;
     const desc = own.length >= 3 ? own : prevText;
     if (!desc) continue;
@@ -2189,7 +2203,7 @@ function parseScreenshot(text) {
     if (it.k === 'date') { if (!it.used) cur = it.d; continue; }
     const date = it.d || cur;
     const r = categorize(date || dayStart(), it.signed, it.desc);
-    if (!date) r.check = true;
+    if (!date) { r.check = true; r.noDate = true; }
     out.push(r);
   }
   return out;
