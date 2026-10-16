@@ -501,6 +501,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
       </div>
       <div class="ocr-prog" id="ocr-prog" hidden><span id="ocr-msg">Готую…</span><div class="ocr-bar"><i id="ocr-bar"></i></div></div>
       <div class="err" id="ocr-err" hidden></div>
+      <small style="color:var(--muted);font-size:11px">Версія <span id="app-build"></span> · мови: польська, українська, англійська</small>
     </article>
     <div class="data-head" id="imp-head" style="padding:6px 4px 0"><h2>Імпорт виписки з банку</h2></div>
     <article class="card" id="imp-start">
@@ -2006,6 +2007,19 @@ $('imp-save').onclick = async () => {
 };
 
 /* ===== Фото чека / скріншот (тест): Tesseract.js прямо в браузері ===== */
+const BUILD = '2026-10-17.3';
+/* Автооновлення: якщо на сервері новіша версія — перезавантажити (обхід кешу iPhone) */
+async function checkUpdate() {
+  try {
+    const r = await fetch(location.pathname + '?nocache=' + Date.now(), { cache: 'no-store' });
+    const m = (await r.text()).match(/const BUILD = '([^']+)'/);
+    if (!m || m[1] === BUILD) return;
+    let seen = ''; try { seen = sessionStorage.getItem('upd') || ''; sessionStorage.setItem('upd', m[1]); } catch (e) {}
+    if (seen !== m[1]) location.replace(location.pathname + '?b=' + encodeURIComponent(m[1]));
+  } catch (e) {}
+}
+setTimeout(checkUpdate, 2500);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkUpdate(); });
 const OCR_CDN = 'https://cdn.jsdelivr.net/npm/';
 const OCR = { worker: null, loading: null };
 function ocrProgress(msg, frac) {
@@ -2057,13 +2071,17 @@ async function ocrPrepare(file) {
 
 /* --- Розбір тексту --- */
 const OCR_MONTHS = [['styc', 'sty', 'sicn', 'jan'], ['lut', 'liut', 'feb'], ['marc', 'marz', 'ber', 'mar'], ['kwie', 'kwi', 'kvit', 'apr'], ['maj', 'trav', 'may'], ['czerw', 'cze', 'cerv', 'jun'],
-  ['lip', 'jul'], ['sierp', 'sie', 'serp', 'aug'], ['wrze', 'wrz', 'ver', 'sep'], ['pazdz', 'zovt', 'oct', 'paz'], ['listop', 'list', 'nov', 'lis'], ['grud', 'dec', 'gru']];
+  ['lip', 'jul'], ['sierp', 'sie', 'serp', 'aug'], ['wrze', 'wrz', 'ver', 'sep'], ['pazdz', 'zovt', 'kovt', 'oct', 'paz'], ['listop', 'list', 'nov', 'lis'], ['grud', 'dec', 'gru']];
 const UK2LAT = { 'а':'a','б':'b','в':'v','г':'h','ґ':'g','д':'d','е':'e','є':'e','ж':'z','з':'z','и':'y','і':'i','ї':'i','й':'i','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'c','ш':'s','щ':'s','ь':'','ъ':'','ы':'y','э':'e','ё':'e','ю':'iu','я':'ia' };
+// Кирилиця, прочитана латиницею-двійниками («Buopa» = «Вчора», «KoBTHA» = «жовтня»)
+const GLYPH = { b: 'в', u: 'ч', p: 'р', h: 'н', t: 'т', k: 'к', m: 'м', x: 'х', y: 'у', c: 'с', e: 'е', o: 'о', a: 'а', 3: 'з', n: 'п', r: 'г' };
+const deglyph = s => String(s).replace(/[»«]k/gi, 'ж').toLowerCase().replace(/[a-z3]/g, ch => GLYPH[ch] || ch);
 const latin = s => normTxt(s).replace(/[а-яіїєґёъыэ]/g, ch => UK2LAT[ch] ?? ch);
 function monthIdx(word) {
   const w = latin(word);
   if (w.length < 3) return -1;
   for (let i = 0; i < 12; i++) if (OCR_MONTHS[i].some(s => w.startsWith(s))) return i;
+  if (/^[a-z»«]+$/i.test(word)) { const g = latin(deglyph(word)); for (const i of [9, 10, 8]) if (OCR_MONTHS[i].some(s => s.length > 3 && g.startsWith(s))) return i; }
   return -1;
 }
 /* Відносні дати. Порівнюємо латиницею й з допуском на помилки OCR
@@ -2097,7 +2115,8 @@ function relDaysBack(line) {
   const tok = t.split(' ').filter(Boolean);
   if (!tok.length) return null;
   const cands = [tok[0], tok.slice(0, 2).join(''), tok.slice(0, 3).join('')];   // «przed wczoraj», «day before yesterday»
-  for (const [back, words] of REL_DAYS) if (cands.some(c => words.some(w => near(c, w)))) return back;
+  const g = latin(deglyph(String(line).trim().split(/[\s,]+/)[0] || ''));
+  for (const [back, words] of REL_DAYS) if (cands.some(c => words.some(w => near(c, w))) || (g.length >= 4 && words.some(w => /^(vc|poz|soh|sev)/.test(w) && near(g, w)))) return back;
   for (let d = 0; d < 7; d++) if (WEEKDAYS[d].some(w => near(tok[0], w))) return (refNow().getDay() - d + 7) % 7;
   return null;
 }
@@ -2110,7 +2129,7 @@ function ocrDate(line) {
   if (m) return mkDate(m[3].length === 2 ? 2000 + +m[3] : +m[3], +m[2] - 1, +m[1]);
   m = t.match(/^(?:[a-zа-яіїєґ]{2,12}\.?,?\s+)?(\d{1,2})[.\/](\d{1,2})\.?(?:,?\s+[a-zа-яіїєґ]{2,12}\.?)?(?:,?\s+\d{1,2}:\d{2})?$/);
   if (m && +m[2] <= 12) { const r = mkDate(guessYear(+m[2] - 1, +m[1]), +m[2] - 1, +m[1]); if (r) return r; }
-  m = t.match(/\b(\d{1,2})\s+([a-zа-яіїєґ]{3,})\.?(?:\s+(20\d{2}))?\b/);
+  m = t.match(/\b(\d{1,2})\s+[»«]?([a-zа-яіїєґ]{3,})\.?(?:\s+(20\d{2}))?/);
   if (m) { const mi = monthIdx(m[2]); if (mi > -1) return mkDate(m[3] ? +m[3] : guessYear(mi, +m[1]), mi, +m[1]); }
   const back = relDaysBack(line);
   return back === null ? null : dayStart(back);
@@ -2251,6 +2270,7 @@ async function ocrFiles(files) {
   showReview(); renderImport(); pop($('imp-review'));
   $('imp-review').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+$('app-build').textContent = BUILD;
 $('ocr-cam').onchange = e => ocrFiles(e.target.files);
 $('ocr-gal').onchange = e => ocrFiles(e.target.files);
 
