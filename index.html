@@ -226,7 +226,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   .app { max-width: 700px; }
   #cat-list.cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 32px; }
   #an-mode .card { grid-template-columns: 280px minmax(0, 1fr); column-gap: 28px; align-items: center; }
-  #an-mode .legend { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+  #an-mode .card > h2, #an-mode .card > .seg, #an-mode .card > .chips-sel { grid-column: 1 / -1; }
+  #an-mode .donut-wrap { grid-column: 1; grid-row: 4; }
+  #an-mode .legend { grid-column: 2; grid-row: 4; align-self: start; }
   .sheet { top: 0; align-items: center; }
   .sheet-in { border-radius: 26px; width: min(600px, calc(100% - 48px)); height: auto; max-height: 86vh; }
 }
@@ -385,7 +387,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   .card { padding: 22px 26px; }
 
   #an-mode .card { grid-template-columns: 320px minmax(0, 1fr); column-gap: 36px; align-items: center; }
-  #an-mode .legend { grid-column: 2; grid-row: 1 / span 2; align-self: start; }
+  #an-mode .card > h2, #an-mode .card > .seg, #an-mode .card > .chips-sel { grid-column: 1 / -1; }
+  #an-mode .donut-wrap { grid-column: 1; grid-row: 4; }
+  #an-mode .legend { grid-column: 2; grid-row: 4; align-self: start; }
   .donut-wrap svg { width: 300px; }
 
   #view-reports { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; align-items: start; }
@@ -418,8 +422,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
     <div class="top-left">
       <button class="chip-btn icon-btn menu-btn" type="button" id="menu-btn" aria-label="Меню" aria-expanded="false">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-      <button class="chip-btn icon-btn" type="button" id="set-btn" aria-label="Налаштування" hidden>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
       <h1 id="title">Фінанси</h1>
     </div>
     <div class="top-actions">
@@ -435,11 +437,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
     <article class="card summary" id="summary"></article>
 
-    <div class="seg" role="group" aria-label="Режим">
-      <button type="button" id="mode-list" aria-pressed="true">Список</button>
-      <button type="button" id="mode-an" aria-pressed="false">Аналітика</button>
-    </div>
-
     <div id="list-mode" class="app" style="padding:0;gap:14px">
       <article class="card" id="cat-card">
         <button type="button" class="card-head" id="cat-head" aria-expanded="false" aria-controls="cat-list">
@@ -449,19 +446,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
       </article>
       <article class="card"><h2>Доходи <small id="inc-total" class="num"></small></h2><div id="inc-list"></div></article>
       <article class="card"><h2>Операції <small id="ops-count"></small></h2><div class="ops" id="ops-list"></div></article>
-    </div>
-
-    <div id="an-mode" class="app" style="padding:0;gap:14px" hidden>
-      <div class="seg" role="group" aria-label="Тип">
-        <button type="button" id="an-exp" aria-pressed="true">Витрати</button>
-        <button type="button" id="an-inc" aria-pressed="false">Доходи</button>
-      </div>
-      <article class="card">
-        <div class="donut-wrap"><svg id="donut" viewBox="0 0 200 200" role="img" aria-label="Розподіл за категоріями"></svg>
-          <div class="donut-center"><div class="k" id="dc-k">Разом</div><div class="v num" id="dc-v"></div></div></div>
-        <div class="hint">Торкніться сектора або рядка для деталей</div>
-        <div class="legend" id="legend"></div>
-      </article>
     </div>
   </section>
 
@@ -476,11 +460,19 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
       <svg id="rep-chart" viewBox="0 0 340 200" role="img" aria-label="Витрати і доходи по місяцях"></svg>
     </article>
     <div class="stats" id="rep-stats"></div>
-    <article class="card">
-      <h2>Найбільші витрати <small id="rep-cat-total" class="num"></small></h2>
-      <div class="chips-sel" id="rep-cat-period" role="group" aria-label="Період"></div>
-      <div id="rep-cats"></div>
-    </article>
+    <div id="an-mode" class="app" style="padding:0;gap:14px">
+      <article class="card">
+        <h2 id="dist-title">Розподіл <small id="dist-total" class="num"></small></h2>
+        <div class="seg" role="group" aria-label="Тип">
+          <button type="button" id="an-exp" aria-pressed="true">Витрати</button>
+          <button type="button" id="an-inc" aria-pressed="false">Доходи</button>
+        </div>
+        <div class="chips-sel" id="dist-period" role="group" aria-label="Період"></div>
+        <div class="donut-wrap"><svg id="donut" viewBox="0 0 200 200" role="img" aria-label="Розподіл за категоріями"></svg>
+          <div class="donut-center"><div class="k" id="dc-k">Разом</div><div class="v num" id="dc-v"></div></div></div>
+        <div class="legend" id="legend"></div>
+      </article>
+    </div>
   </section>
 
   <!-- Дані: експорт і імпорт -->
@@ -577,7 +569,7 @@ const catOf = c => CATS[c] || CATS['Прочее'];
 const GOOGLE_CLIENT_ID = '1043168494723-oj0cehsegrq18eqj5mct9qvb56ui3i9u.apps.googleusercontent.com'; // проєкт Google Cloud «Finansy»
 const SHEET_TITLE = 'Фінанси';
 const OPS_TAB = 'Операції';
-const HEAD = ['ID', 'Дата', 'Тип', 'Категорія', 'Підкатегорія', 'Опис', 'Сума', 'Джерело', 'Перевірити', 'Примітка'];
+const HEAD = ['ID', 'Дата', 'Тип', 'Категорія', 'Нотатки', 'Опис', 'Сума', 'Джерело', 'Перевірити', 'Примітка'];
 let TODAY = new Date();
 const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const fromYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -824,6 +816,8 @@ async function loadOperations() {
 const tFmt = new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' });
 function setStatus(kind, text) {
   const el = $('status');
+  clearTimeout(setStatus.t); el.hidden = false;
+  if (kind === 'ok') setStatus.t = setTimeout(() => { el.hidden = true; }, 3500);
   el.classList.toggle('err-line', kind === 'err');
   const tag = { ok: '✓', err: '!', load: '…', off: '⚙' }[kind];
   el.innerHTML = `<b>${tag}</b> <span>${esc(text)}</span>` + (kind === 'err' ? ' <button type="button" id="st-retry">Повторити</button>' : kind === 'off' ? ' <button type="button" id="st-set">Увійти</button>' : '');
@@ -850,7 +844,7 @@ async function refresh(showSpinner) {
       S.ops = await loadOperations();
       cacheOps();
       TODAY = new Date();
-      render(); if (S.view === 'reports') renderReports();
+      refreshViews();
       setStatus('ok', 'Оновлено о ' + tFmt.format(new Date()) + ' · ' + plural(S.ops.length, 'операція', 'операції', 'операцій'));
     } catch (e) {
       if (handleErr(e)) return;
@@ -881,7 +875,7 @@ function openSettings() {
     ${sid ? `<a class="ghost" style="text-align:center;text-decoration:none;color:inherit" href="https://docs.google.com/spreadsheets/d/${encodeURIComponent(sid)}/edit" target="_blank" rel="noopener">Відкрити мою таблицю</a>` : ''}
     <button class="ghost" type="button" id="g-out">Вийти з облікового запису</button>
     <div class="hint"><a href="privacy.html" target="_blank" rel="noopener">Політика конфіденційності</a></div>`);
-  $('g-out').onclick = () => { auth.signOut(); S.ops = []; closeSheet(); render(); renderReports(); setStatus('off', 'Ви вийшли'); openWelcome(); };
+  $('g-out').onclick = () => { auth.signOut(); S.ops = []; closeSheet(); refreshViews(); setStatus('off', 'Ви вийшли'); openWelcome(); };
 }
 function openScriptSettings() {
   const c = api.conf();
@@ -905,7 +899,7 @@ function openScriptSettings() {
       refresh(true);
     } catch (e) { err.textContent = e.message; err.hidden = false; btn.disabled = false; btn.textContent = 'Перевірити і зберегти'; }
   };
-  const cl = $('s-clear'); if (cl) cl.onclick = () => { ['url', 'key', 'ops', 'backend'].forEach(k => store.del(k)); S.ops = []; closeSheet(); render(); renderReports(); setStatus('off', 'Ви ще не увійшли'); openWelcome(); };
+  const cl = $('s-clear'); if (cl) cl.onclick = () => { ['url', 'key', 'ops', 'backend'].forEach(k => store.del(k)); S.ops = []; closeSheet(); refreshViews(); setStatus('off', 'Ви ще не увійшли'); openWelcome(); };
 }
 
 /* ===== Стан ===== */
@@ -951,13 +945,14 @@ function totals(list) {
   });
   return { inc, exp, sav };
 }
+const incKey = o => (o.desc || '').trim() || 'Інше';
 function byCat(list, type) {
   const map = {};
   list.forEach(o => {
     const isInc = o.type === 'Доход';
     if (type === 'inc' ? !isInc : isInc) return;
     if (type !== 'inc' && o.cat === SAVINGS) return;
-    const key = type === 'inc' ? (o.sub || 'Інше') : o.cat;
+    const key = type === 'inc' ? incKey(o) : o.cat;
     map[key] = (map[key] || 0) + (o.type === 'Возврат' ? -o.amount : o.amount);
   });
   return Object.entries(map).filter(([, v]) => v > 0.004).sort((a, b) => b[1] - a[1]);
@@ -992,7 +987,7 @@ function opHtml(o) {
   const c = catOf(o.cat);
   const sign = o.type === 'Доход' || o.type === 'Возврат' ? '+' : '';
   return `<div class="op" data-id="${esc(o.id)}" data-row="${o.row || ''}" role="button" tabindex="0" aria-label="Редагувати: ${esc(o.desc)}"><div class="tile" style="background:color-mix(in srgb, ${c.color} 22%, var(--surface-2))">${c.emoji}</div>
-    <div class="txt"><div class="t1">${esc(o.desc)}</div><div class="t2"><span>${dShort.format(o.date)} · ${esc(o.type === 'Доход' ? (o.sub || 'Дохід') : c.uk)}</span>${o.check ? '<span class="flag">перевірити</span>' : ''}${o.type === 'Возврат' ? '<span class="flag">повернення</span>' : ''}</div></div>
+    <div class="txt"><div class="t1">${esc(o.desc)}</div><div class="t2"><span>${dShort.format(o.date)} · ${esc(o.type === 'Доход' ? 'Дохід' : c.uk)}${o.sub ? ' · ' + esc(o.sub) : ''}</span>${o.check ? '<span class="flag">перевірити</span>' : ''}${o.type === 'Возврат' ? '<span class="flag">повернення</span>' : ''}</div></div>
     <div class="amt num ${sign ? 'in' : ''}">${sign}${money(o.amount)}</div></div>`;
 }
 function opsGrouped(list) {
@@ -1036,11 +1031,17 @@ function renderDonut(list, anim) {
       stroke-dasharray="${segs[i][1]} ${C}" stroke-dashoffset="${-start}" transform="rotate(-90 100 100)"><title>${esc(donutLabel(n))}</title></circle>`;
   }).join('');
   S.donut = { data, total };
-  $('legend').innerHTML = data.length ? data.map(([n, v], i) => `<button type="button" class="cat-row" data-i="${i}">
+  $('legend').innerHTML = data.length ? data.map(([n, v], i) => `<button type="button" class="cat-row" data-i="${i}" data-k="${esc(n)}">
       <div class="head"><i class="dot" style="background:${donutColor(n)}"></i><span class="emo">${CATS[n] ? catOf(n).emoji : '💼'}</span><span class="name">${esc(donutLabel(n))}</span><span class="pct num">${Math.round(v / total * 100)}%</span><span class="sum num">${money(v)}</span></div>
       <div class="bar"><span style="width:${(v / data[0][1] * 100).toFixed(1)}%;background:${donutColor(n)}"></span></div></button>`).join('')
     : `<div class="empty">${S.anType === 'inc' ? 'Доходів' : 'Витрат'} за цей період немає</div>`;
-  document.querySelectorAll('#donut .seg-sector, #legend .cat-row').forEach(el => el.onclick = () => { const i = +el.dataset.i; selectSector(S.sel === i ? null : i); });
+  $('dist-title').firstChild.textContent = (S.anType === 'inc' ? 'Звідки доходи ' : 'Куди йдуть гроші ');
+  document.querySelectorAll('#donut .seg-sector').forEach(el => el.onclick = () => { const i = +el.dataset.i; selectSector(S.sel === i ? null : i); });
+  document.querySelectorAll('#legend .cat-row').forEach(el => el.onclick = () => {
+    const k = el.dataset.k;
+    if (S.anType === 'inc') openList('💼 ' + k, list.filter(o => o.type === 'Доход' && incKey(o) === k));
+    else openList(catOf(k).emoji + ' ' + catOf(k).uk, list.filter(o => o.type !== 'Доход' && o.cat === k));
+  });
   if (S.sel !== null && S.sel >= data.length) S.sel = null;
   selectSector(S.sel);
   if (anim && data.length && !reduceMotion()) {
@@ -1098,12 +1099,12 @@ function openReview() {
         const left = S.ops.filter(x => x.check).length;
         $('rv-n').textContent = left;
         if (!left) $('rv-list').innerHTML = '<div class="rv-done fade-in"><b>✅ Усе перевірено</b><span class="hint">Нових операцій на перевірку немає</span></div>';
-        render();
+        refreshViews();
       };
       if (reduceMotion()) return finish();
       item.animate([{ height: item.offsetHeight + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 280, easing: 'ease-in' }).onfinish = finish;
     };
-    item.querySelector('select').onchange = e => { const cat = e.target.value; done({ cat, sub: '', type: cat === 'Доходы' ? 'Доход' : o.type === 'Доход' ? 'Расход' : o.type }); };
+    item.querySelector('select').onchange = e => { const cat = e.target.value; done({ cat, type: cat === 'Доходы' ? 'Доход' : o.type === 'Доход' ? 'Расход' : o.type }); };
     item.querySelector('.rv-ok').onclick = () => done();
   });
 }
@@ -1130,25 +1131,25 @@ function renderReports() {
   const yt = totals(S.ops.filter(o => o.date.getFullYear() === y));
   const avg = full.length ? full.reduce((s, t) => s + t.exp, 0) / full.length : 0;
   $('rep-stats').innerHTML = [
-    ['Витрати за рік', money(yt.exp)], ['Доходи за рік', money(yt.inc)],
-    ['Середньо на місяць', full.length ? money(avg) : '—'], ['Заощаджено', money(yt.inc - yt.exp)],
+    ['Витрати в середньому за місяць', full.length ? money(avg) : '—'],
+    ['💰 Заощаджено за ' + y + ' рік', money(yt.sav)],
   ].map(([k, v]) => `<div class="stat"><span class="k">${k}</span><span class="v num">${v}</span></div>`).join('');
-  renderRepCats();
+  renderDist(S.anim); S.anim = false;
 }
-const REP_CAT_PERIODS = [['1m', 'Місяць', 1], ['6m', '6 місяців', 6], ['1y', 'Рік', 12]];
-function repCatOps() {
-  const months = (REP_CAT_PERIODS.find(p => p[0] === S.repCat) || REP_CAT_PERIODS[2])[2];
-  const n = new Date(), from = new Date(n.getFullYear(), n.getMonth() - months, n.getDate() + 1), to = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1);
-  return S.ops.filter(o => o.date >= from && o.date < to);
+/* «Розподіл»: один блок замість трьох — календарні періоди, як у графіку і на Головній */
+const DIST_PERIODS = [['1m', 'Цей місяць'], ['6m', '6 місяців'], ['1y', 'Рік']];
+function distOps() {
+  const n = TODAY, y = n.getFullYear(), m = n.getMonth(), end = new Date(y, m, n.getDate() + 1);
+  const from = S.dist === '1m' ? new Date(y, m, 1) : S.dist === '6m' ? new Date(y, m - 5, 1) : new Date(y, 0, 1);
+  return S.ops.filter(o => o.date >= from && o.date < end);
 }
-function renderRepCats() {
-  if (!S.repCat) S.repCat = store.get('repCat', '1y');
-  $('rep-cat-period').innerHTML = REP_CAT_PERIODS.map(([k, t]) => `<button type="button" data-k="${k}" aria-pressed="${S.repCat === k}">${t}</button>`).join('');
-  $('rep-cat-period').querySelectorAll('button').forEach(b => b.onclick = () => { S.repCat = b.dataset.k; store.set('repCat', S.repCat); renderRepCats(); bindCatRows(); });
-  const all = byCat(repCatOps(), 'exp');
-  $('rep-cat-total').textContent = money(all.reduce((t, [, v]) => t + v, 0));
-  const cats = all.slice(0, 6);
-  $('rep-cats').innerHTML = cats.map(([n, v], i) => catRowHtml(n, v, cats[0][1], i)).join('') || '<div class="empty">Витрат за цей період немає</div>';
+function renderDist(anim) {
+  if (!S.dist) S.dist = DIST_PERIODS.some(p => p[0] === store.get('dist', '')) ? store.get('dist', '') : '1y';
+  $('dist-period').innerHTML = DIST_PERIODS.map(([k, t]) => `<button type="button" data-k="${k}" aria-pressed="${S.dist === k}">${t}</button>`).join('');
+  $('dist-period').querySelectorAll('button').forEach(b => b.onclick = () => { if (S.dist === b.dataset.k) return; S.dist = b.dataset.k; store.set('dist', S.dist); S.sel = null; renderDist(true); });
+  $('an-exp').setAttribute('aria-pressed', S.anType === 'exp'); $('an-inc').setAttribute('aria-pressed', S.anType === 'inc');
+  renderDonut(distOps(), anim);
+  $('dist-total').textContent = money((S.donut && S.donut.total) || 0);
 }
 function renderSearch() {
   const q = $('q').value.trim().toLowerCase();
@@ -1158,21 +1159,22 @@ function renderSearch() {
   $('q-count').textContent = plural(res.length, 'збіг', 'збіги', 'збігів');
   $('q-list').innerHTML = res.length ? res.slice(0, 60).map(opHtml).join('') : '<div class="empty">Нічого не знайдено. Спробуйте назву магазину або суму.</div>';
 }
+function refreshViews() {
+  render();
+  if (S.view === 'reports') { renderReports(); renderSearch(); }
+  if (S.view === 'import') renderExport();
+}
 function render() {
   const list = inPeriod();
   renderPeriods(); renderSummary(list);
-  $('list-mode').hidden = S.mode !== 'list'; $('an-mode').hidden = S.mode !== 'an';
-  $('mode-list').setAttribute('aria-pressed', S.mode === 'list'); $('mode-an').setAttribute('aria-pressed', S.mode === 'an');
-  $('an-exp').setAttribute('aria-pressed', S.anType === 'exp'); $('an-inc').setAttribute('aria-pressed', S.anType === 'inc');
-  if (S.mode === 'list') renderList(list); else renderDonut(list, S.anim);
-  S.anim = false;
+  renderList(list);
   bindCatRows();
 }
 function bindCatRows() {
-  document.querySelectorAll('#cat-list [data-cat], #inc-list [data-cat], #rep-cats [data-cat]').forEach(el => el.onclick = () => {
+  document.querySelectorAll('#cat-list [data-cat], #inc-list [data-cat]').forEach(el => el.onclick = () => {
     const key = el.dataset.cat;
-    const base = el.closest('#rep-cats') ? repCatOps() : inPeriod();
-    if (key.startsWith('inc:')) { const n = key.slice(4); openList(n, base.filter(o => o.type === 'Доход' && (o.sub || 'Інше') === n)); }
+    const base = inPeriod();
+    if (key.startsWith('inc:')) { const n = key.slice(4); openList('💼 ' + n, base.filter(o => o.type === 'Доход' && incKey(o) === n)); }
     else openList(catOf(key).emoji + ' ' + catOf(key).uk, base.filter(o => o.type !== 'Доход' && o.cat === key));
   });
 }
@@ -1303,7 +1305,7 @@ function openEditor(op) {
   const fail = m => { err.textContent = m; err.hidden = false; };
   const busy = (btn, on, text) => { btn.disabled = on; btn.textContent = text; };
   $('f-save').onclick = async () => {
-    const amount = parseFloat($('f-amount').value.replace(/\s/g, '').replace(',', '.'));
+    const amount = Math.abs(toAmount($('f-amount').value) || 0);
     if (!(amount > 0)) return fail('Введіть суму більшу за нуль, наприклад 24,90.');
     if (!form.cat) return fail('Оберіть категорію.');
     if (!/^\d{4}-\d{2}-\d{2}$/.test($('f-date').value)) return fail('Оберіть дату.');
@@ -1319,19 +1321,19 @@ function openEditor(op) {
         S.ops.unshift(toOp(await backend.add(data)));
       }
       S.ops.sort((a, b) => b.date - a.date); cacheOps();
-      closeSheet(); render(); renderReports(); if (S.view === 'reports') renderSearch();
+      closeSheet(); refreshViews();
       toast(edit ? 'Зміни збережено в таблиці' : 'Записано в таблицю');
     } catch (e) { if (handleErr(e)) return; fail(e.message); busy(btn, false, edit ? 'Зберегти зміни' : 'Зберегти'); }
   };
   if (edit) $('f-del').onclick = async () => {
     const btn = $('f-del');
     if (!form.armed) { form.armed = true; btn.textContent = 'Натисніть ще раз, щоб видалити'; btn.classList.add('armed'); return; }
-    if (!backend.ready() && !auth.email()) return fail('Спершу увійдіть (⚙ угорі).');
+    if (!backend.ready() && !auth.email()) return fail('Спершу увійдіть: Налаштування внизу екрана.');
     busy(btn, true, 'Видаляю…'); err.hidden = true;
     try {
       await backend.remove(op);
       S.ops = await loadOperations(); cacheOps();   // номери рядків після видалення зсуваються
-      closeSheet(); render(); renderReports(); if (S.view === 'reports') renderSearch();
+      closeSheet(); refreshViews();
       toast('Операцію видалено з таблиці');
     } catch (e) { if (handleErr(e)) return; fail(e.message); busy(btn, false, 'Видалити операцію'); btn.classList.remove('armed'); form.armed = false; }
   };
@@ -1349,11 +1351,9 @@ document.addEventListener('keydown', e => {
 function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 3200); }
 
 /* ===== Події ===== */
-$('periods').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.period = b.dataset.p; S.sel = null; S.opsShown = baseShown(); store.set('period', S.period); S.anim = true; render(); if (S.mode === 'list') stagger($('list-mode'), '.cat-row, .chip, .day, .op'); };
-$('mode-list').onclick = () => { if (S.mode === 'list') return; S.mode = 'list'; store.set('mode', 'list'); render(); stagger($('list-mode'), '.card, .cat-row, .chip, .day, .op', 30); };
-$('mode-an').onclick = () => { if (S.mode === 'an') return; S.mode = 'an'; S.sel = null; S.anim = true; store.set('mode', 'an'); render(); pop($('an-mode')); };
-$('an-exp').onclick = () => { if (S.anType === 'exp') return; S.anType = 'exp'; S.sel = null; S.anim = true; render(); };
-$('an-inc').onclick = () => { if (S.anType === 'inc') return; S.anType = 'inc'; S.sel = null; S.anim = true; render(); };
+$('periods').onclick = e => { const b = e.target.closest('button'); if (!b || S.period === b.dataset.p) return; S.period = b.dataset.p; S.opsShown = baseShown(); store.set('period', S.period); render(); stagger($('list-mode'), '.cat-row, .chip, .day, .op'); };
+$('an-exp').onclick = () => { if (S.anType === 'exp') return; S.anType = 'exp'; S.sel = null; renderDist(true); };
+$('an-inc').onclick = () => { if (S.anType === 'inc') return; S.anType = 'inc'; S.sel = null; renderDist(true); };
 $('add-btn').onclick = openAdd;
 $('cat-head').onclick = toggleCats;
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1383,7 +1383,7 @@ function go(view, dir, opts = {}) {
   document.querySelectorAll('.nav button, .drawer-nav button').forEach(x => x.dataset.view === view ? x.setAttribute('aria-current', 'page') : x.removeAttribute('aria-current'));
   Object.keys(VIEWS).forEach(v => $('view-' + v).hidden = v !== view);
   $('title').textContent = VIEWS[view];
-  if (view === 'reports') { renderReports(); renderSearch(); bindCatRows(); }
+  if (view === 'reports') { if (prev !== 'reports') S.anim = true; renderReports(); renderSearch(); }
   if (view === 'import') renderExport();
   if (!opts.swipe) slideIn($('view-' + view), prev === view ? 0 : dir);
   closeDrawer(); $('dock').classList.remove('tucked');
@@ -1396,7 +1396,7 @@ $('top-add').onclick = openAdd;
 
 /* --- перехід між розділами: «плитки», що їдуть одна за одною --- */
 function prepView(v) {
-  if (v === 'reports') { renderReports(); renderSearch(); bindCatRows(); }
+  if (v === 'reports') { S.anim = true; renderReports(); renderSearch(); }
   if (v === 'import') renderExport();
 }
 const EASE = 'cubic-bezier(.22,.8,.22,1)';
@@ -1573,9 +1573,9 @@ $('exp-go').onclick = () => {
   const list = expList(); if (!list.length) return;
   const q = v => { v = String(v ?? ''); return /[;"\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
   const dmy = d => String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear();
-  const rows = [['Дата', 'Тип', 'Категорія', 'Підкатегорія', 'Опис', 'Сума, zł', 'Джерело']].concat(list.map(o => {
+  const rows = [['Дата', 'Тип', 'Категорія', 'Опис', 'Сума, zł', 'Нотатки', 'Джерело']].concat(list.map(o => {
     const sign = o.type === 'Доход' || o.type === 'Возврат' ? 1 : -1;
-    return [dmy(o.date), TYPE_UK[o.type] || o.type, catOf(o.cat).uk, o.sub || '', o.desc || '', (sign * o.amount).toFixed(2).replace('.', ','), o.source || ''];
+    return [dmy(o.date), TYPE_UK[o.type] || o.type, catOf(o.cat).uk, o.desc || '', (sign * o.amount).toFixed(2).replace('.', ','), o.sub || '', o.source || ''];
   }));
   const csv = '﻿' + rows.map(r => r.map(q).join(';')).join('\r\n');
   const r = expRange(), name = 'finansy_' + (EXP.period === 'all' ? 'usi' : ymd(r[0]) + '_' + ymd(new Date(r[1] - 864e5))) + '.csv';
@@ -1873,8 +1873,8 @@ function categorize(date, amount, raw) {
   const salary = /wynagrodz|pensj|salary|payroll|зарплат/i.test(normTxt(raw));
   if (r.type === 'Доход') {
     if (hit && hit.cat !== 'Доходы' && !salary) { r.type = 'Возврат'; r.cat = hit.cat; r.desc = 'Повернення — ' + hit.name; }
-    else { r.cat = 'Доходы'; r.sub = salary ? 'Зарплата' : 'Інше'; r.desc = salary ? (hit ? hit.name + ' — зарплата' : 'Зарплата') : cleanDesc(raw); }
-  } else if (hit) { r.cat = hit.cat; r.sub = hit.sub; r.desc = hit.name; r.check = !!hit.check; }
+    else { r.cat = 'Доходы'; r.desc = salary ? (hit ? hit.name + ' — зарплата' : 'Зарплата') : cleanDesc(raw); }
+  } else if (hit) { r.cat = hit.cat; r.desc = hit.name; r.check = !!hit.check; }
   else { r.desc = cleanDesc(raw); r.check = true; }
   r.dup = S.ops.some(o => o.date.toDateString() === date.toDateString() && Math.abs(o.amount - r.amount) < 0.005 && (o.type === 'Доход') === (r.type === 'Доход'));
   if (r.dup) r.on = false;
@@ -1927,7 +1927,7 @@ function renderImport() {
     const r = R[+row.dataset.i];
     row.querySelector('input').onchange = e => { r.on = e.target.checked; renderImport(); };
     row.querySelector('select').onchange = e => {
-      r.cat = e.target.value; r.check = false; r.sub = '';
+      r.cat = e.target.value; r.check = false;
       if (r.cat === 'Доходы') r.type = 'Доход'; else if (r.type === 'Доход') r.type = 'Возврат';
       renderImport();
     };
@@ -1968,7 +1968,7 @@ $('imp-save').onclick = async () => {
     const r = await backend.import( on.map(x => ({ date: ymd(x.date), type: x.type, cat: x.cat, sub: x.sub, desc: x.desc, amount: x.amount, check: x.check, raw: x.raw })));
     r.added.forEach(o => S.ops.push(toOp(o)));
     S.ops.sort((a, b) => b.date - a.date); cacheOps();
-    resetImport(); render(); renderReports();
+    resetImport(); refreshViews();
     go('home');
     toast('Записано ' + plural(r.added.length, 'операцію', 'операції', 'операцій') + (r.skipped ? ', пропущено вже наявних: ' + r.skipped : ''));
   } catch (e) { if (handleErr(e)) return; toast(e.message); renderImport(); }
@@ -1980,13 +1980,11 @@ matchMedia('(min-width: 960px)').addEventListener('change', () => { S.opsShown =
   const t = store.get('theme', ''); if (t) document.documentElement.dataset.theme = t;
   const qi = new URLSearchParams(location.search).get('icon'); if (ICONS[qi]) store.set('icon', qi);
   applyIcon(curIcon());
-  S.period = store.get('period', 'month'); S.mode = store.get('mode', 'list');
+  S.period = PERIODS.some(p => p[0] === store.get('period', '')) ? store.get('period', '') : 'month';
   const back = auth.takeRedirect();
   const c = cachedOps(); S.ops = c ? c.ops : [];
-  S.anim = true;
-  render(); renderReports();
-  if (S.mode === 'list') stagger($('list-mode'), '.card, .cat-row, .chip, .day, .op', 30);
-  if ($('set-btn')) $('set-btn').onclick = openPrefs;
+  render();
+  stagger($('list-mode'), '.card, .cat-row, .chip, .day, .op', 30);
   if (backend.mode() === 'script') { if (backend.ready()) refresh(true); else { setStatus('off', 'Ви ще не увійшли'); openWelcome(); } return; }
   if (back === 'ok') { store.del('g.tried'); refresh(true); }
   else if (back === 'need-login') { setStatus('off', 'Потрібно увійти в Google'); openWelcome(); }
