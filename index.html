@@ -251,6 +251,24 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 .dock .add { width: 58px; height: 58px; padding: 0; border-radius: 50%; justify-self: end; transition: transform .18s ease; }
 .dock .add svg { width: 26px; height: 26px; }
 .dock .add:active { transform: scale(.92); }
+.dock .add svg { transition: transform .25s cubic-bezier(.2,.8,.2,1); }
+.dock .add.open svg { transform: rotate(45deg); }
+.dock.menu-open { z-index: 42; }
+.dock.menu-open .nav { opacity: .35; pointer-events: none; }
+.off-input { position: fixed; left: -100px; top: 0; width: 1px; height: 1px; opacity: 0; }
+.add-menu-bg { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.25); animation: fadeIn .2s; }
+.add-menu { position: fixed; z-index: 41; right: 16px; bottom: calc(166px + env(safe-area-inset-bottom, 0px)); width: min(300px, calc(100vw - 32px));
+  background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 6px; box-shadow: 0 18px 50px -12px rgba(0,0,0,.45);
+  transform-origin: 90% 100%; animation: addMenuIn .22s cubic-bezier(.2,.8,.2,1); }
+.add-menu button { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; background: transparent; color: var(--fg); border-radius: 16px; padding: 12px; text-align: left; font: inherit; }
+.add-menu button:active { background: var(--line); }
+.add-menu button + button { border-top: 1px solid var(--line); border-radius: 0 0 16px 16px; }
+.add-menu button:nth-child(2) { border-radius: 0; }
+.add-menu span { font-size: 24px; width: 32px; text-align: center; flex: none; }
+.add-menu b { display: grid; font-size: 16px; font-weight: 700; }
+.add-menu small { font-size: 12px; font-weight: 500; color: var(--muted); margin-top: 2px; }
+@keyframes addMenuIn { from { opacity: 0; transform: scale(.85) translateY(10px); } }
+@keyframes fadeIn { from { opacity: 0; } }
 .add-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* редагування */
@@ -492,7 +510,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
   <!-- Дані: експорт і імпорт -->
   <section id="view-import" class="app" style="padding:0;gap:14px" hidden>
-    <div class="data-head" id="ocr-head" style="padding:6px 4px 0"><h2>Фото чека або скріншот<span class="tag-test">ТЕСТ</span></h2></div>
+    <div class="data-head" id="ocr-head" style="padding:6px 4px 0"><h2>Фото чека або скріншот</h2></div>
     <article class="card" id="ocr-card">
       <p style="margin:0;font-size:14px;color:var(--muted)">Чек — запишемо одну витрату на всю суму. Скріншот із банку — кожен рядок із сумою стане окремою операцією. Розпізнавання працює на телефоні, фото нікуди не надсилаються.</p>
       <div class="ocr-btns" id="ocr-btns">
@@ -501,7 +519,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
       </div>
       <div class="ocr-prog" id="ocr-prog" hidden><span id="ocr-msg">Готую…</span><div class="ocr-bar"><i id="ocr-bar"></i></div></div>
       <div class="err" id="ocr-err" hidden></div>
-      <small style="color:var(--muted);font-size:11px">Версія <span id="app-build"></span> · мови: польська, українська, англійська</small>
+      <small style="color:var(--muted);font-size:11px">Версія <span id="app-build"></span></small>
     </article>
     <div class="data-head" id="imp-head" style="padding:6px 4px 0"><h2>Імпорт виписки з банку</h2></div>
     <article class="card" id="imp-start">
@@ -539,6 +557,14 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 
 </main>
 
+<div class="add-menu-bg" id="add-menu-bg" hidden></div>
+<div class="add-menu" id="add-menu" role="menu" aria-label="Додати операцію" hidden>
+  <button type="button" role="menuitem" data-a="shot"><span aria-hidden="true">🖼️</span><b>Скріншот або фото<small>з галереї, можна кілька</small></b></button>
+  <button type="button" role="menuitem" data-a="cam"><span aria-hidden="true">📷</span><b>Сфотографувати чек<small>одна витрата на всю суму</small></b></button>
+  <button type="button" role="menuitem" data-a="hand"><span aria-hidden="true">✍️</span><b>Ввести вручну</b></button>
+</div>
+<input id="add-cam" class="off-input" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">
+<input id="add-gal" class="off-input" type="file" accept="image/*" multiple tabindex="-1" aria-hidden="true">
 <div class="dock" id="dock">
   <button class="add" type="button" id="add-btn" aria-label="Додати операцію">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="add-label">Додати операцію</span></button>
@@ -1381,7 +1407,19 @@ function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false
 $('periods').onclick = e => { const b = e.target.closest('button'); if (!b || S.period === b.dataset.p) return; S.period = b.dataset.p; S.opsShown = baseShown(); store.set('period', S.period); render(); stagger($('list-mode'), '.cat-row, .chip, .day, .op'); };
 $('an-exp').onclick = () => { if (S.anType === 'exp') return; S.anType = 'exp'; S.sel = null; renderDist(true); };
 $('an-inc').onclick = () => { if (S.anType === 'inc') return; S.anType = 'inc'; S.sel = null; renderDist(true); };
-$('add-btn').onclick = openAdd;
+function toggleAddMenu(show) {
+  const m = $('add-menu'), open = show ?? m.hidden;
+  m.hidden = $('add-menu-bg').hidden = !open; $('add-btn').classList.toggle('open', open); $('dock').classList.toggle('menu-open', open);
+  $('add-btn').setAttribute('aria-expanded', open);
+}
+$('add-btn').onclick = () => isPhone() ? toggleAddMenu() : openAdd();
+$('add-menu-bg').onclick = () => toggleAddMenu(false);
+$('add-menu').onclick = e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return;
+  toggleAddMenu(false);
+  if (b.dataset.a === 'hand') openAdd();
+  else { const inp = $(b.dataset.a === 'cam' ? 'add-cam' : 'add-gal'); inp.value = ''; inp.click(); }   // click — у тому ж дотику (вимога iOS)
+};
 $('cat-head').onclick = toggleCats;
 const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 function toggleCats() {
@@ -2007,7 +2045,7 @@ $('imp-save').onclick = async () => {
 };
 
 /* ===== Фото чека / скріншот (тест): Tesseract.js прямо в браузері ===== */
-const BUILD = '2026-10-17.4';
+const BUILD = '1.1';
 /* Автооновлення: якщо на сервері новіша версія — перезавантажити (обхід кешу iPhone) */
 async function checkUpdate() {
   try {
@@ -2266,7 +2304,7 @@ async function ocrFiles(files) {
     $('ocr-err').textContent = e.message || 'Не вдалося розпізнати'; $('ocr-err').hidden = false;
   } finally {
     OCR.onLog = null; $('ocr-prog').hidden = true; $('ocr-btns').style.pointerEvents = ''; $('ocr-btns').style.opacity = '';
-    $('ocr-cam').value = ''; $('ocr-gal').value = '';
+    $('ocr-cam').value = ''; $('ocr-gal').value = ''; $('add-cam').value = ''; $('add-gal').value = '';
   }
   if (!texts.length) return;
   if (!rows.length) {
@@ -2283,6 +2321,7 @@ async function ocrFiles(files) {
 }
 $('app-build').textContent = BUILD;
 $('ocr-cam').onchange = e => ocrFiles(e.target.files);
+$('add-cam').onchange = $('add-gal').onchange = e => { if (!e.target.files.length) return; resetImport(); go('import'); ocrFiles(e.target.files); };
 $('ocr-gal').onchange = e => ocrFiles(e.target.files);
 
 matchMedia('(min-width: 960px)').addEventListener('change', () => { S.opsShown = baseShown(); render(); });
